@@ -8,8 +8,6 @@
 // 4. Method lock — POST only
 // 5. HMAC token — frontend sends a time-based token to verify it's our app
 
-import { createHmac } from 'crypto';
-
 export const config = {
   api: {
     bodyParser: false,
@@ -30,22 +28,6 @@ function isRateLimited(ip) {
   }
   entry.count++;
   return entry.count > RATE_LIMIT;
-}
-
-// ─── HMAC Token Verification ───
-// Frontend generates: HMAC-SHA256(secret, timestamp) where timestamp = floor(Date.now() / 30000)
-// Token is valid for current + previous window (60s tolerance)
-function verifyToken(token, secret) {
-  if (!token || !secret) return false;
-  const now = Math.floor(Date.now() / 30000);
-  for (let i = 0; i <= 1; i++) {
-    const expected = createHmac('sha256', secret)
-      .update(String(now - i))
-      .digest('hex')
-      .substring(0, 16); // short hash is sufficient
-    if (token === expected) return true;
-  }
-  return false;
 }
 
 // ─── Allowed Origins ───
@@ -91,15 +73,7 @@ export default async function handler(req, res) {
     return res.status(429).json({ error: 'Too many requests. Try again in a minute.' });
   }
 
-  // ─── 4. HMAC Token check ───
-  const TOKEN_SECRET = process.env.TERTIUS_TOKEN_SECRET;
-  const token = req.headers['x-tertius-token'];
-  if (TOKEN_SECRET && !verifyToken(token, TOKEN_SECRET)) {
-    console.warn(`[Transcribe] Invalid token from ${ip}`);
-    return res.status(403).json({ error: 'Invalid token' });
-  }
-
-  // ─── 5. API Key check ───
+  // ─── 4. API Key check ───
   const GROQ_API_KEY = process.env.GROQ_API_KEY;
   if (!GROQ_API_KEY) {
     return res.status(500).json({ error: 'Service not configured' });

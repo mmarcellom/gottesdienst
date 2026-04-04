@@ -222,10 +222,23 @@
 
 #appScreen.cinema-mode .cinema-controls {
   pointer-events: auto;
+  opacity: 1;
 }
 
 #appScreen.cinema-mode.controls-visible .cinema-controls {
   opacity: 1;
+}
+
+/* On mobile: always show controls in cinema mode */
+@media (max-width: 767px) {
+  #appScreen.cinema-mode .cinema-controls {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  #appScreen.cinema-mode .cinema-bottom-bar {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 /* Fullscreen: controls always interactive, visible on hover */
@@ -644,6 +657,18 @@
   overflow: hidden;
   will-change: transform, filter;
   transition: filter 0.3s ease;
+  pointer-events: none;  /* Let touches pass through to #appScreen for scrolling (iOS Safari) */
+}
+
+/* Unmute button and other direct children need pointer events */
+.discover-video-hero > .hero-unmute-btn,
+.discover-video-hero > .video-live-badge {
+  pointer-events: auto;
+}
+
+/* Cinema mode: hero needs full interaction */
+#appScreen.cinema-mode .discover-video-hero {
+  pointer-events: auto;
 }
 
 /* ─── Hero Video Slider ─── */
@@ -665,6 +690,11 @@
 
 .hero-video-slider .hero-video.hero-video--active {
   visibility: visible;
+  pointer-events: none;  /* Keep none so iOS Safari can scroll over fixed hero */
+}
+
+/* Only allow iframe interaction in cinema mode */
+#appScreen.cinema-mode .hero-video-slider .hero-video.hero-video--active {
   pointer-events: auto;
 }
 
@@ -821,10 +851,14 @@
     width: calc(100% - 40px);
     max-width: none;
     overflow: hidden;
-    border-radius: 50px;
+    border-radius: 30px;
   }
   .content-card-1 .discover-section {
-    padding: 10px 15px;
+    padding: 16px 10px;
+    overflow: hidden;
+  }
+  .fan-carousel {
+    height: 90px;
   }
 }
 
@@ -832,7 +866,7 @@
 .fan-carousel {
   position: relative;
   width: 100%;
-  height: 127px;
+  height: 100px;
   overflow: visible;
 }
 
@@ -840,6 +874,10 @@
   position: absolute;
   top: 50%;
   left: 50%;
+  width: 55vw;
+  max-width: 200px;
+  height: auto;
+  aspect-ratio: 16/9;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform, opacity, z-index;
 }
@@ -860,9 +898,9 @@
 
 /* Left = behind, peeking left — blurred thumbnail */
 .fan-carousel .stream-card[data-fan-pos="left"] {
-  transform: translate(-95%, -50%) scale(0.9);
+  transform: translate(-115%, -50%) scale(0.8);
   z-index: 5;
-  opacity: 0.9;
+  opacity: 0.6;
 }
 .fan-carousel .stream-card[data-fan-pos="left"] .stream-card-bg {
   filter: blur(4px);
@@ -870,9 +908,9 @@
 
 /* Right = behind, peeking right — blurred thumbnail */
 .fan-carousel .stream-card[data-fan-pos="right"] {
-  transform: translate(-5%, -50%) scale(0.9);
+  transform: translate(15%, -50%) scale(0.8);
   z-index: 5;
-  opacity: 0.9;
+  opacity: 0.6;
 }
 .fan-carousel .stream-card[data-fan-pos="right"] .stream-card-bg {
   filter: blur(4px);
@@ -915,6 +953,8 @@
     transform: none;
     opacity: 1;
     z-index: auto;
+    width: 200px;
+    height: 114px;
   }
 
   .fan-carousel::after {

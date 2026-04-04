@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="/css/tokens.css">
 <link rel="stylesheet" href="/css/base.css">
 <link rel="stylesheet" href="/css/components.css">
-<link rel="stylesheet" href="/css/screens.css?v=52">
+<link rel="stylesheet" href="/css/screens.css?v=55">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -854,19 +854,6 @@ function toggleCinema() {
     if (appEl.classList.contains('cinema-mode')) startControlsHideTimer();
   }, { passive: true });
 
-  // ─── HMAC Token Generator (Web Crypto API) ───
-  async function generateTertiusToken() {
-    const secret = 'trt-v1-gottesdienst-2026';
-    const timestamp = String(Math.floor(Date.now() / 30000));
-    const enc = new TextEncoder();
-    const key = await crypto.subtle.importKey(
-      'raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
-    );
-    const sig = await crypto.subtle.sign('HMAC', key, enc.encode(timestamp));
-    const hex = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
-    return hex.substring(0, 16);
-  }
-
   // ─── Tab Audio Transcription (Whisper via Groq) ───
   const transcribeBtn = document.getElementById('cinemaTranscribeBtn');
   const transcriptEl = document.getElementById('cinemaTranscript');
@@ -886,12 +873,46 @@ function toggleCinema() {
   let txTargetLang = 'de';     // target language filter
   let txSkipCount = 0;         // consecutive skipped chunks (other language)
 
+  // ─── Mobile: Use YouTube's built-in captions ───
+  function enableYouTubeCaptions(enable) {
+    const player = getActivePlayer();
+    if (!player) return;
+    try {
+      if (enable) {
+        // Load captions module and enable auto-captions
+        player.loadModule('captions');
+        player.setOption('captions', 'track', { languageCode: txTargetLang === 'zu' ? 'en' : txTargetLang });
+        player.unloadModule('captions');
+        player.loadModule('captions');
+      } else {
+        player.unloadModule('captions');
+      }
+    } catch(e) {
+      // Fallback: reload iframe with cc_load_policy
+      const iframe = heroSlots[heroIndex]?.querySelector('iframe');
+      if (iframe) {
+        const src = iframe.src;
+        if (enable && !src.includes('cc_load_policy=1')) {
+          iframe.src = src.replace('enablejsapi=1', 'enablejsapi=1&cc_load_policy=1&cc_lang_pref=' + (txTargetLang === 'zu' ? 'en' : txTargetLang));
+        } else if (!enable && src.includes('cc_load_policy=1')) {
+          iframe.src = src.replace('&cc_load_policy=1', '').replace(/&cc_lang_pref=[a-z]+/, '');
+        }
+      }
+    }
+  }
+
+  const isMobile = !navigator.mediaDevices?.getDisplayMedia;
+
   async function startTranscription() {
-    // Check if getDisplayMedia is available (not on mobile)
-    if (!navigator.mediaDevices?.getDisplayMedia) {
+    // Mobile: enable YouTube's built-in auto-captions
+    if (isMobile) {
+      txActive = true;
+      transcribeBtn.classList.add('transcribing');
+      if (langSelector) langSelector.classList.add('visible');
+      enableYouTubeCaptions(true);
       transcriptEl.classList.add('active');
-      transcriptInner.innerHTML = '<div class="cinema-transcript-line">Live-Transkription ist nur am Desktop verfügbar (Chrome/Edge).</div>';
-      setTimeout(() => { transcriptEl.classList.remove('active'); transcriptInner.innerHTML = ''; }, 4000);
+      transcriptInner.innerHTML = '<div class="cinema-transcript-line" style="font-size:14px;">YouTube-Untertitel aktiviert</div>';
+      setTimeout(() => { transcriptEl.classList.remove('active'); transcriptInner.innerHTML = ''; }, 2500);
       return;
     }
 
@@ -953,6 +974,10 @@ function toggleCinema() {
   }
 
   function stopTranscription() {
+    // Mobile: disable YouTube captions
+    if (isMobile) {
+      enableYouTubeCaptions(false);
+    }
     if (txProcessor) { txProcessor.disconnect(); txProcessor = null; }
     if (txAudioCtx) { txAudioCtx.close(); txAudioCtx = null; }
     if (txStream) { txStream.getTracks().forEach(t => t.stop()); txStream = null; }
@@ -1026,12 +1051,8 @@ function toggleCinema() {
       // No language param → auto-detect
       fd.append('response_format', 'verbose_json');
 
-      // Generate time-based HMAC token (matches server-side verification)
-      const txToken = await generateTertiusToken();
-
       const res = await fetch('/api/transcribe', {
         method: 'POST',
-        headers: { 'X-Tertius-Token': txToken },
         body: fd,
       });
 
@@ -1095,6 +1116,8 @@ function toggleCinema() {
       txSkipCount = 0;
       transcriptInner.innerHTML = '';
       transcriptStatus.textContent = 'Transcribing (' + txTargetLang.toUpperCase() + ')…';
+      // Mobile: switch YouTube caption language
+      if (isMobile && txActive) enableYouTubeCaptions(true);
     });
   });
 
