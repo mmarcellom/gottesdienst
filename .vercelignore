@@ -4,3 +4,15 @@
 node_modules
 docs
 sql
+
+# Flutter (native only — web app files stay)
+build
+.dart_tool
+.packages
+android
+ios
+linux
+macos
+windows
+test
+lib
