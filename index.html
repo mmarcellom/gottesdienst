@@ -887,6 +887,14 @@ function toggleCinema() {
   let txSkipCount = 0;         // consecutive skipped chunks (other language)
 
   async function startTranscription() {
+    // Check if getDisplayMedia is available (not on mobile)
+    if (!navigator.mediaDevices?.getDisplayMedia) {
+      transcriptEl.classList.add('active');
+      transcriptInner.innerHTML = '<div class="cinema-transcript-line">Live-Transkription ist nur am Desktop verfügbar (Chrome/Edge).</div>';
+      setTimeout(() => { transcriptEl.classList.remove('active'); transcriptInner.innerHTML = ''; }, 4000);
+      return;
+    }
+
     try {
       // Request tab audio capture — one-click dialog
       txStream = await navigator.mediaDevices.getDisplayMedia({
