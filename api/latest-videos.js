@@ -131,9 +131,28 @@ export default async function handler(req, res) {
     const allFeeds = await Promise.all(CHANNELS.map(fetchChannelFeed));
     const allVideos = allFeeds.flat();
 
-    // Sort by published date (newest first) to pick the 6 most recent uploads
+    // Guarantee at least 1 video per channel, then fill remaining slots with newest
     allVideos.sort((a, b) => new Date(b.published) - new Date(a.published));
-    const recent = allVideos.slice(0, 6);
+    const recent = [];
+    const usedIds = new Set();
+
+    // Step 1: Pick the newest video from each channel
+    for (const channel of CHANNELS) {
+      const newest = allVideos.find(v => v.channelName === channel.name && !usedIds.has(v.videoId));
+      if (newest) {
+        recent.push(newest);
+        usedIds.add(newest.videoId);
+      }
+    }
+
+    // Step 2: Fill remaining slots (up to 6) with the newest videos overall
+    for (const v of allVideos) {
+      if (recent.length >= 6) break;
+      if (!usedIds.has(v.videoId)) {
+        recent.push(v);
+        usedIds.add(v.videoId);
+      }
+    }
 
     // Now sort these 6 by service date + time-of-day (morning → evening)
     recent.sort((a, b) => {
