@@ -1,0 +1,219 @@
+/* ═══════════════════════════════════════════════════════════
+   TĒRTIUS — UI Components
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── Button: Primary (Yellow CTA) ─── */
+.btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--t-btn-height);
+  border-radius: var(--t-radius-pill);
+  background: var(--t-yellow);
+  border: none;
+  cursor: pointer;
+  font-family: var(--t-font-body);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--t-yellow-text);
+  letter-spacing: 0.02em;
+  transition: all var(--t-duration) var(--t-ease);
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.btn-primary:hover {
+  background: var(--t-yellow-hover);
+  box-shadow: var(--t-shadow-sm);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+/* ─── Button: Ghost (Outlined) ─── */
+.btn-ghost {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--t-btn-height);
+  border-radius: var(--t-radius-pill);
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.25);
+  cursor: pointer;
+  font-family: var(--t-font-body);
+  font-size: 16px;
+  color: var(--t-text);
+  letter-spacing: 0.02em;
+  transition: all var(--t-duration) var(--t-ease);
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.btn-ghost:hover {
+  border-color: rgba(255,255,255,0.4);
+  background: rgba(255,255,255,0.05);
+}
+
+.btn-ghost:active {
+  transform: scale(0.98);
+}
+
+/* ─── Button: Icon ─── */
+.btn-icon {
+  background: none;
+  border: 1px solid var(--t-border);
+  color: var(--t-text-muted);
+  border-radius: var(--t-radius-sm);
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all var(--t-duration) var(--t-ease);
+  white-space: nowrap;
+  font-family: var(--t-font-body);
+  letter-spacing: 0.05em;
+}
+
+.btn-icon:hover {
+  border-color: var(--t-yellow);
+  color: var(--t-text);
+}
+
+.btn-icon.active {
+  background: var(--t-yellow);
+  color: var(--t-yellow-text);
+  border-color: var(--t-yellow);
+}
+
+/* ─── Input Field ─── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px 10px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.5);
+  transition: background var(--t-duration) var(--t-ease);
+}
+
+.field:focus-within {
+  background: rgba(255,255,255,0.6);
+}
+
+.field-label {
+  font-size: 13px;
+  color: var(--t-text);
+}
+
+.field-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: none;
+  color: #000;
+  caret-color: #000;
+  padding: 4px 0;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: var(--t-font-body);
+  outline: none;
+  transition: border-color var(--t-duration) var(--t-ease);
+}
+
+.field-input::placeholder {
+  color: #3a4f62;
+}
+
+.field-line {
+  display: none;
+}
+
+/* ─── Card (Setup) ─── */
+.card {
+  background: var(--t-surface);
+  border: 1px solid var(--t-border);
+  border-radius: var(--t-radius-md);
+  padding: var(--t-sp-6);
+}
+
+.card-title {
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--t-text-muted);
+  margin-bottom: var(--t-sp-4);
+}
+
+/* ─── Connection Badge ─── */
+.conn-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--t-border);
+  transition: all var(--t-duration) var(--t-ease);
+}
+
+.conn-badge.connected {
+  color: var(--t-green);
+  border-color: rgba(82,192,122,0.3);
+}
+
+.conn-badge.disconnected {
+  color: var(--t-text-muted);
+}
+
+.conn-badge.live {
+  color: var(--t-live);
+  border-color: rgba(224,82,82,0.3);
+}
+
+.conn-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.conn-badge.live .conn-dot {
+  animation: blink 1.2s step-end infinite;
+}
+
+.conn-badge.connected .conn-dot {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Decorative Blob ─── */
+.blob-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.blob-bg::after {
+  content: '';
+  position: absolute;
+  bottom: -120px;
+  left: -100px;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background-image: var(--t-blob);
+}
+
+@media (min-width: 1024px) {
+  .blob-bg::after {
+    bottom: -140px;
+    left: -120px;
+    width: 600px;
+    height: 600px;
+  }
+}

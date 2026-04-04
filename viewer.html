@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Gottesdienst · Live</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:wght@300;400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg: #0a0a0f; --surface: #111118; --border: #1e1e2e;
+  --accent: #c8a96e; --text: #e8e4dc; --text-mid: #a09a90;
+  --text-muted: #55505e; --live: #e05252; --green: #52c07a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: 'Source Sans 3', sans-serif; background: var(--bg); color: var(--text); height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+
+.app-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0; }
+.app-logo { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--accent); }
+.app-logo span { display: block; font-family: 'Source Sans 3', sans-serif; font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-top: 1px; }
+.conn-badge { display: flex; align-items: center; gap: 6px; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); }
+.conn-badge.connected { color: var(--green); border-color: rgba(82,192,122,0.3); }
+.conn-badge.disconnected { color: var(--text-muted); }
+.conn-badge.live { color: var(--live); border-color: rgba(224,82,82,0.3); }
+.conn-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.conn-badge.live .conn-dot { animation: blink 1.2s step-end infinite; }
+.conn-badge.connected .conn-dot { animation: pulse-g 2s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+@keyframes pulse-g { 0%,100%{opacity:1} 50%{opacity:0.35} }
+
+.viewer-body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; justify-content: flex-end; padding: 28px 24px 24px; scroll-behavior: smooth; }
+.viewer-body::-webkit-scrollbar { display: none; }
+
+.viewer-waiting { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; color: var(--text-muted); gap: 14px; }
+.viewer-waiting .cross { font-size: 3rem; color: var(--accent); opacity: 0.18; }
+.viewer-waiting p { font-size: 0.85rem; text-align: center; line-height: 1.7; max-width: 220px; }
+
+.t-line { font-family: 'Playfair Display', serif; line-height: 1.45; margin-bottom: 0.5em; animation: sup 0.35s ease; }
+@keyframes sup { from{opacity:0;transform:translateY(7px)} to{opacity:1;transform:none} }
+.t-current { color: var(--text); }
+.t-recent  { color: var(--text-mid); }
+.t-old     { color: var(--text-muted); }
+.t-cursor { display: inline-block; width: 2px; height: 1em; background: var(--accent); vertical-align: middle; margin-left: 3px; animation: blink 1s step-end infinite; }
+
+.viewer-footer { flex-shrink: 0; padding: 10px 18px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--surface); }
+.vf-label { font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); }
+.font-controls { display: flex; gap: 6px; }
+.font-btn { background: #16161f; border: 1px solid var(--border); color: var(--text-mid); border-radius: 5px; width: 36px; height: 36px; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: inherit; }
+.font-btn:active { background: var(--border); }
+.wake-btn { display: flex; align-items: center; gap: 5px; font-size: 0.68rem; color: var(--text-muted); background: none; border: 1px solid var(--border); border-radius: 5px; padding: 6px 12px; cursor: pointer; font-family: inherit; transition: all 0.2s; letter-spacing: 0.06em; }
+.wake-btn.active { color: var(--green); border-color: rgba(82,192,122,0.35); }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-logo">Gottesdienst<span>Viewer · Live</span></div>
+  <div class="conn-badge disconnected" id="connBadge">
+    <div class="conn-dot"></div>
+    <span id="connLabel">Verbinde…</span>
+  </div>
+</div>
+
+<div class="viewer-body" id="viewerBody">
+  <div class="viewer-waiting" id="viewerWaiting">
+    <div class="cross">✝</div>
+    <p>Warte auf Transkription…</p>
+  </div>
+</div>
+
+<div class="viewer-footer">
+  <div class="vf-label">Transkription · Live</div>
+  <div class="font-controls">
+    <button class="font-btn" onclick="adjustFont(-1)">−</button>
+    <button class="font-btn" onclick="adjustFont(1)">+</button>
+  </div>
+  <button class="wake-btn" id="wakeBtn" onclick="toggleWakeLock()">☀ Aktiv</button>
+</div>
+
+<script>
+const SB_URL = 'https://kksqdyylahmfaiyhpcga.supabase.co';
+const SB_KEY = 'sb_publishable_dGqHrkm9TO7uCeFWPGZfBw_Liqoe0sY';
+const CHANNEL_NAME = 'gottesdienst-live-v1';
+
+let lines = [];
+let fontScale = 1;
+let wakeLock = null;
+
+const sb = window.supabase.createClient(SB_URL, SB_KEY);
+
+function setConn(state, label) {
+  const b = document.getElementById('connBadge');
+  b.className = 'conn-badge ' + state;
+  document.getElementById('connLabel').textContent = label;
+}
+
+// Connect
+const channel = sb.channel(CHANNEL_NAME, { config: { broadcast: { self: false } } });
+channel
+  .on('broadcast', { event: 'tx' }, ({ payload }) => {
+    receiveText(payload);
+  })
+  .subscribe(status => {
+    if (status === 'SUBSCRIBED') setConn('connected', 'Verbunden');
+    else if (status === 'CHANNEL_ERROR') setConn('disconnected', 'Fehler');
+  });
+
+function receiveText({ text }) {
+  document.getElementById('viewerWaiting').style.display = 'none';
+  lines.push({ text });
+  renderViewer();
+  setConn('live', 'Live');
+  setTimeout(() => setConn('connected', 'Verbunden'), 2200);
+}
+
+function renderViewer() {
+  const body = document.getElementById('viewerBody');
+  body.querySelectorAll('.t-line').forEach(e => e.remove());
+  const show = lines.slice(-5);
+  const frag = document.createDocumentFragment();
+  show.forEach((l, i) => {
+    const age = show.length - 1 - i;
+    const d = document.createElement('div');
+    d.className = 't-line ' + (age === 0 ? 't-current' : age <= 1 ? 't-recent' : 't-old');
+    const sizes = [1.0, 1.4, 2.2];
+    const sizeIdx = age === 0 ? 2 : age === 1 ? 1 : 0;
+    d.style.fontSize = (fontScale * sizes[sizeIdx]) + 'rem';
+    d.textContent = l.text;
+    if (age === 0) { const c = document.createElement('span'); c.className = 't-cursor'; d.appendChild(c); }
+    frag.appendChild(d);
+  });
+  body.insertBefore(frag, document.getElementById('viewerWaiting'));
+  body.scrollTop = body.scrollHeight;
+}
+
+function adjustFont(dir) {
+  fontScale = Math.max(0.5, Math.min(2.0, fontScale + dir * 0.2));
+  renderViewer();
+}
+
+async function toggleWakeLock() {
+  const btn = document.getElementById('wakeBtn');
+  if (wakeLock) {
+    await wakeLock.release(); wakeLock = null;
+    btn.classList.remove('active');
+  } else {
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+      btn.classList.add('active');
+      wakeLock.addEventListener('release', () => { wakeLock = null; btn.classList.remove('active'); });
+    } catch {}
+  }
+}
+</script>
+</body>
+</html>

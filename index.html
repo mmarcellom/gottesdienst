@@ -1,0 +1,1600 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1D2B3A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Tērtius · Transcribed Messages</title>
+<link rel="manifest" href="/manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/tokens.css">
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/components.css">
+<link rel="stylesheet" href="/css/screens.css?v=52">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════
+     SPLASH SCREEN
+     ═══════════════════════════════════════════════════════ -->
+<div class="screen active" id="splashScreen">
+  <div class="blob-bg"></div>
+  <div class="logo-wrap">
+    <!-- Crane with split-axis animation wrapper -->
+    <div class="crane-flight-x">
+    <svg class="logo-crane" viewBox="175 55 270 115">
+      <path d="M176.94,157.6c1.55-.37,3.61.88,6.85.76,1.82-.12,3.37-.44,5.31-2.09,1.4,2.04,4.3,2.9,7.35,2.83,3.05-.07,10.44-.61,14.99-.96,4.55-.34,7.4-1.25,10.42-2.99,4.68,3.06,10.13,1.58,13.82,1.58-2.54-1.47-7.3-4.46-8.66-7.96,7.19,1.07,12.75-2.32,17.58-2.69,2.36-.18,6.3-.11,8.33,1.22,0,0,2.35-.61,4.2-.48,7.41,1.99,19.46,1.07,21.26-2.14-7.33,2.32-14.63,2.25-20.01.81-5.38-1.44-7.92-4.05-8.37-6.3,8.84,2.8,21.23,2.03,24.32-.59-7.56,1.14-16.99,1.33-24.8-1.25-3.87-1.51-5.6-4.53-5.86-6.08,13.93,4.61,25.24,1.73,26.46.33-9.91,1.51-18.02.37-21.74-.48-4.18-.95-8.77-3.1-10.39-5.57,9.1,2.36,24.14,2.29,27.2-.55-7.74,1.07-22.15.52-29.19-1.29-1.25-.74-3.13-2.14-3.76-2.95,9.07.66,22.33-.74,25.87-3.54-10.47,1.99-27.86,2.73-37.59,1.18-17.03-2.95-25.5-11.57-29.11-16.95,20.42,7.52,51.67,12.01,61.69,8.7-11.13-.44-30.74-1.84-51.89-7.52-11.94-6.56-20.34-16.58-23.37-24.4,14.3,9.36,36.04,18.87,46.58,21.67,10.54,2.8,21.82,4.94,25.65,3.46-18.43-2.65-39.06-9.14-59.04-20.12-6.12-5.9-11.06-14-12.97-23.07,6.85,5.9,29.19,19.85,41.03,25.85,11.84,5.99,22.6,10.37,29.14,10.17-12.73-4.23-28.06-11.74-43.14-20.54-5.36-5.7-8.45-12.78-9.7-18.72,8.7,7.89,30.15,19.88,46.36,27.17-8.55-9.43-11.15-21.52-7.62-26.93,10.93,21.2,36.88,34.69,53.46,42.51,6.68,3.15,14.5,7.67,16.51,11.45,2.46,4.62,2.07,7.82-2.75,14.94-4.23,6.24-1.82,15.72,1.77,21.96,2.46,1.62,6.73,4.18,10.86,6.88,4.13,2.7,12.43,7.27,21.33,5.8,8.89-1.47,12.44-9.48,14.59-16.36,2.26-7.22,6.04-10.22,10.61-11.2,4.57-.98,10.81.34,14.5,4.03,20.69.44,35.6,6.44,40.76,11.6-17.25-2.99-35.38-1.47-45.37.81-1.95,2.91-4.42,4.42-7.26,4.53-3.65,2.95-7.54,9.5-11.38,14.56-9.93,12.28-23.73,11.55-30.22,8.84-29.46,14.08-53.22.79-62.01-4.42-5.45-1.47-13.03-4.31-20-8.73-6.97-4.42-12.8-3.33-16.76-2.13-2.31-1.06-4.47-1.74-7.49-1.67-3.02.07-15.21.88-26.71,1.87-11.5.98-19.78-.93-22.6-4.4,4.77.96,8.13.27,10.96-.44" fill="#898989"/>
+      <path d="M400.96,144.36c-9.47-3.06-22.85-3.15-26.93-2.9-3.59-3.59-8.6-5.27-13.61-3.99-5.01,1.28-6.39,6.25-7.22,9-.84,2.75-3.49,9.61-7.37,13.03-4.13,3.65-8.94,5.98-17.2,5.39-8.26-.59-17.63-7.24-21.52-10.17.91,2.68,3.89,6.36,7.17,9.04-8.33-1.87-12.48-9.68-14.99-14.45-2.51-4.77-5.72-14.14-2.96-22.14,2.06-5.97,4.98-6.44,4.75-10.87-.19-3.84-5.58-8.12-10.44-10.72-4.86-2.6-35.92-16.02-52.48-34.84,3,9.48,13.61,18.87,16.56,21.18,2.95,2.31,11.39,7.06,14.54,8.4-6.03-.09-14.45-5.31-17.79-7.67,2.03,4.96,6.23,9.39,19.42,14.14-2.87.81-9.64-1.46-13.97-3.87,1.36,3.91,5.2,7,9.58,9.24,4.35,2.22,8.16,3.29,9.98,4.28-4.13.2-9.64-1.09-15.58-4.03,3.05,5.65,10.61,10.96,20.49,13.27.1-1.92,1.03-7.13-2.32-11.44-3.02-3.1-4.46-7.22-3.43-9.14,2.8,5.42,10.72,11.83,16.4,13.08-1.77,1.47-6.71.18-7.74-.37,1.07,4.24-.1,11.07,2.51,16.73,2.26,4.9,7.04,9.25,9.14,11.68-2.06-.7-4.42-2.05-5.07-2.62-.09,5.9,7.73,19.14,20.14,22.85-3.39.74-8.64-1.7-10.39-2.78-3.15,1.29-7.7,2.3-11.79,1.79,2.14,3.28,10.5,5.31,15.63,4.46,4.09,2.51,8.84,2.4,11.5,2.14-.48-.74-.92-2.03-.96-2.69,1.92,1.73,13.27,3.65,21.89,1.22,8.62-2.43,18.8-11.54,19.61-21.19-.52-.77-.66-1.81-.42-2.57.86,1.18,4.55,3,7.69-.52,1.43.17,3.39-.29,4.08-2.11-1.4-.49-1.82-2.14-3.76-2.41.54-1.2,2.63-1.87,4.4-1.03,1.06.49,1.38,1.25,3.37,1.13.22,1.11-.98,1.23-1.5,2.83,6.56-1.11,21.93-1.11,30.59-.36" fill="#eaeaea"/>
+      <path d="M281.26,129.22c.05,1.03.22,3.12.76,4.35-5.75-1.18-13.32-4.5-14.5-9.39,4.3,2.46,10.64,4.55,13.73,5.04" fill="#eaeaea"/>
+      <path d="M288.06,141.02c-1.62-1.23-3.73-3.39-4.45-4.45-4.13-.66-8.55-2.36-10.98-3.66,1.13,3.83,6.95,8.5,15.4,9.24,0-.32.01-.68.02-1.13" fill="#eaeaea"/>
+      <path d="M288.22,144.04c-2.52-.17-8.11-1.68-10.25-3.04,1.38,3.48,6.78,6.71,10.98,7.48-.44-1.6-.74-3.46-.74-4.44" fill="#eaeaea"/>
+      <path d="M289.61,150.45c-2.38-.32-5.28-1.3-7.15-2.51.81,3.27,5.11,6.51,9.75,7.52-1.3-1.79-2.16-3.81-2.6-5.01" fill="#eaeaea"/>
+      <path d="M293.81,157.63c-2.92-.52-5.82-1.52-7.27-2.41,1.15,3.51,7.86,5.97,11.08,6.22-1.47-1.15-3.32-3.1-3.81-3.81" fill="#eaeaea"/>
+      <path d="M236.85,151.25c4.39-2.06,9.25-4.24,16.07-3.94,0,0,2.35-.61,4.2-.48,1.36,2.1,5.2,5.01,9.77,5.75,4.57.74,11.31-.26,14.7-1.29-2.76,2.95-11.9,3.83-18.35,1.73,1.33,2.4,6.04,6.78,17.06,7.44-4.02,1.33-11.72.88-16.55-2.99-2.1.96-5.53,1.22-7.92,0,1.88-.55,3.59-1.6,4.18-3.15-3.96-.39-9.18-2.71-10.58-3.81-.26,1.22.7,4.16,2.58,5.8-2.56.24-6.53-1.54-8.89-5.37-.59,1.11-.49,2.37.47,3.62-2.36-.26-5.49-1.7-6.74-3.32" fill="#eaeaea"/>
+    </svg>
+    </div>
+    <!-- Title -->
+    <span class="logo-title t-brand-title" style="color: var(--t-text);">TĒRTIUS</span>
+    <!-- Subtitle row -->
+    <div class="logo-subtitle-row" style="display: flex; align-items: flex-start; margin-top: 4px;">
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <span class="logo-subtitle-text t-brand-subtitle">TRANSCRIBED</span>
+        <div class="logo-subtitle-line" style="width: calc(100% + 6px); background: var(--t-gray); margin-top: 3px;"></div>
+      </div>
+      <!-- Sound wave bars -->
+      <div style="display: flex; align-items: center; gap: 3px; padding: 0 4px; height: 14px;">
+        <div class="wave-bar" style="height: 40%; background: var(--t-gray); border-radius: 1px;"></div>
+        <div class="wave-bar" style="height: 70%; background: var(--t-gray); border-radius: 1px;"></div>
+        <div class="wave-bar" style="height: 100%; background: var(--t-gray); border-radius: 1px;"></div>
+        <div class="wave-bar" style="height: 70%; background: var(--t-gray); border-radius: 1px;"></div>
+        <div class="wave-bar" style="height: 40%; background: var(--t-gray); border-radius: 1px;"></div>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <span class="logo-subtitle-text t-brand-subtitle">MESSAGES</span>
+        <div class="logo-subtitle-line" style="width: calc(100% + 6px); background: var(--t-gray); margin-top: 3px;"></div>
+      </div>
+    </div>
+  </div>
+  <!-- Buttons fade in after animation -->
+  <div class="btn-group splash-buttons">
+    <button class="btn-primary" onclick="showScreen('signInScreen')">Sign In</button>
+    <button class="btn-ghost" onclick="showScreen('signUpScreen')">Sign Up</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SIGN IN SCREEN
+     ═══════════════════════════════════════════════════════ -->
+<div class="screen" id="signInScreen">
+  <div class="blob-bg"></div>
+  <div class="auth-header">
+    <h1 class="t-title-lg">Sign In</h1>
+  </div>
+  <div class="auth-body">
+    <div class="auth-form">
+      <div class="auth-fields">
+        <div class="field">
+          <input class="field-input" type="email" id="signInEmail" placeholder="Email" />
+          <div class="field-line"></div>
+        </div>
+        <div class="field">
+          <input class="field-input" type="password" id="signInPassword" placeholder="Password" />
+          <div class="field-line"></div>
+        </div>
+      </div>
+      <a class="t-link auth-forgot" href="#">Forgot password?</a>
+      <div class="auth-buttons">
+        <button class="btn-primary" onclick="handleSignIn()">Sign In</button>
+        <button class="btn-ghost" onclick="showScreen('signUpScreen')">Sign Up</button>
+      </div>
+      <div class="auth-error" id="signInError" style="color: var(--t-error); font-size: 0.8rem; text-align: center; margin-top: 12px; display: none;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SIGN UP SCREEN
+     ═══════════════════════════════════════════════════════ -->
+<div class="screen" id="signUpScreen">
+  <div class="blob-bg"></div>
+  <div class="auth-header">
+    <h1 class="t-title-lg">Sign Up</h1>
+  </div>
+  <div class="auth-body">
+    <div class="auth-form">
+      <div class="auth-fields" style="gap: 28px;">
+        <div class="field">
+          <input class="field-input" type="text" id="signUpName" placeholder="Name" />
+          <div class="field-line"></div>
+        </div>
+        <div class="field">
+          <input class="field-input" type="email" id="signUpEmail" placeholder="Email" />
+          <div class="field-line"></div>
+        </div>
+        <div class="field">
+          <input class="field-input" type="password" id="signUpPassword" placeholder="Password" />
+          <div class="field-line"></div>
+        </div>
+        <div class="field">
+          <input class="field-input" type="password" id="signUpPasswordConfirm" placeholder="Re-type Password" />
+          <div class="field-line"></div>
+        </div>
+      </div>
+      <div class="auth-buttons">
+        <button class="btn-primary" onclick="handleSignUp()">Sign Up</button>
+        <button class="btn-ghost" onclick="showScreen('signInScreen')">Sign in</button>
+      </div>
+      <div class="auth-error" id="signUpError" style="color: var(--t-error); font-size: 0.8rem; text-align: center; margin-top: 12px; display: none;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     APP SCREEN — Discover (Post-Auth)
+     ═══════════════════════════════════════════════════════ -->
+<div class="screen" id="appScreen">
+
+  <!-- ─── Discover Header (Apple TV Style — single pill) ─── -->
+  <div class="discover-header">
+    <div class="header-pill" id="headerPill">
+      <input class="header-search-input" id="searchInput" type="text" placeholder="Suchen…" autocomplete="off">
+      <button class="header-pill-btn" onclick="toggleSearch()" aria-label="Search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+      <span class="header-clock" id="headerClock">00:00</span>
+      <button class="header-pill-btn" aria-label="Profile">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 12 0v1"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ─── Video Hero (Live Stream Carousel) ─── -->
+  <div class="discover-video-hero" id="videoHero">
+    <div class="hero-video-slider">
+      <div class="hero-video hero-video--active" data-index="0">
+        <iframe src="https://www.youtube.com/embed/cK8CT7e_CuU?autoplay=1&mute=1&loop=1&playlist=cK8CT7e_CuU&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&playsinline=1&disablekb=1&fs=0&enablejsapi=1" allow="autoplay; encrypted-media; fullscreen" allowfullscreen frameborder="0"></iframe>
+      </div>
+      <div class="hero-video" data-index="1">
+        <iframe src="https://www.youtube.com/embed/hncfNy8xCus?autoplay=0&mute=1&loop=1&playlist=hncfNy8xCus&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&playsinline=1&disablekb=1&fs=0&enablejsapi=1" allow="autoplay; encrypted-media; fullscreen" allowfullscreen frameborder="0"></iframe>
+      </div>
+      <div class="hero-video" data-index="2">
+        <iframe src="https://www.youtube.com/embed/Q5aiihMB_sY?autoplay=0&mute=1&loop=1&playlist=Q5aiihMB_sY&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&playsinline=1&disablekb=1&fs=0&enablejsapi=1" allow="autoplay; encrypted-media; fullscreen" allowfullscreen frameborder="0"></iframe>
+      </div>
+      <div class="hero-video" data-index="3">
+        <iframe src="https://www.youtube.com/embed/Nityj0W5dp8?autoplay=0&mute=1&loop=1&playlist=Nityj0W5dp8&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&playsinline=1&disablekb=1&fs=0&enablejsapi=1" allow="autoplay; encrypted-media; fullscreen" allowfullscreen frameborder="0"></iframe>
+      </div>
+      <div class="hero-video" data-index="4">
+        <iframe src="https://www.youtube.com/embed/rcbqC_94tUg?autoplay=0&mute=1&loop=1&playlist=rcbqC_94tUg&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&playsinline=1&disablekb=1&fs=0&enablejsapi=1" allow="autoplay; encrypted-media; fullscreen" allowfullscreen frameborder="0"></iframe>
+      </div>
+      <div class="hero-video" data-index="5">
+        <iframe src="https://www.youtube.com/embed/GyeOjz9E2uo?autoplay=0&mute=1&loop=1&playlist=GyeOjz9E2uo&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&playsinline=1&disablekb=1&fs=0&enablejsapi=1" allow="autoplay; encrypted-media; fullscreen" allowfullscreen frameborder="0"></iframe>
+      </div>
+    </div>
+    <div class="hero-gradient-overlay"></div>
+    <button class="hero-unmute-btn" id="heroUnmuteBtn" aria-label="Unmute">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="11,5 6,9 2,9 2,15 6,15 11,19"/>
+        <line x1="23" y1="9" x2="17" y2="15" class="mute-x1"/>
+        <line x1="17" y1="9" x2="23" y2="15" class="mute-x2"/>
+      </svg>
+    </button>
+    <span class="video-live-badge">LIVE</span>
+
+    <!-- ─── Cinema Controls (auto-hide, inside hero for fullscreen) ─── -->
+    <div class="cinema-controls" id="cinemaControls">
+      <button class="cinema-control-btn" id="cinemaTranscribeBtn" aria-label="Transcribe">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+        </svg>
+      </button>
+      <div class="cinema-lang-selector" id="cinemaLangSelector">
+        <button class="cinema-lang-btn active" data-lang="de">DE</button>
+        <button class="cinema-lang-btn" data-lang="en">EN</button>
+        <button class="cinema-lang-btn" data-lang="zu">ZU</button>
+      </div>
+      <button class="cinema-control-btn" id="cinemaFullscreenBtn" aria-label="Fullscreen">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/>
+        </svg>
+      </button>
+      <button class="cinema-close-pill" id="cinemaCloseBtn" aria-label="Close">&#x2715;</button>
+    </div>
+
+    <!-- ─── Transcription Overlay (subtitle area) ─── -->
+    <div class="cinema-transcript" id="cinemaTranscript">
+      <div class="cinema-transcript-inner" id="cinemaTranscriptInner"></div>
+    </div>
+    <div class="cinema-transcript-status" id="cinemaTranscriptStatus"></div>
+
+    <!-- ─── Cinema Bottom Bar (progress + time) ─── -->
+    <div class="cinema-bottom-bar" id="cinemaBottomBar">
+      <div class="cinema-progress-wrap" id="cinemaProgressWrap">
+        <div class="cinema-progress-bar" id="cinemaProgressBar"></div>
+        <div class="cinema-progress-handle" id="cinemaProgressHandle"></div>
+      </div>
+      <span class="cinema-time" id="cinemaTime">0:00 / 0:00</span>
+    </div>
+  </div>
+
+  <!-- Hero spacer (pushes content below fixed hero) -->
+  <div class="hero-spacer"></div>
+
+  <!-- ═══ CONTENT CARD 1: Now Streaming ═══ -->
+  <div class="discover-content content-card-1">
+    <div class="discover-section">
+      <div class="fan-carousel" id="fanCarousel">
+        <div class="stream-card card-sm hero-synced-active" data-hero-index="0" style="--card-color: rgba(139,92,246,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/cK8CT7e_CuU/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Andacht</span><span class="stream-card-meta">MKSB Berlin</span></div>
+        </div>
+        <div class="stream-card card-sm" data-hero-index="1" style="--card-color: rgba(236,72,153,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/hncfNy8xCus/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Mustard Seed</span><span class="stream-card-meta">KwaSizabantu Mission</span></div>
+        </div>
+        <div class="stream-card card-sm" data-hero-index="2" style="--card-color: rgba(14,165,233,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/Q5aiihMB_sY/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Senfkörner</span><span class="stream-card-meta">German Translation</span></div>
+        </div>
+        <div class="stream-card card-sm" data-hero-index="3" style="--card-color: rgba(245,158,11,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/Nityj0W5dp8/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Am auzit că te-ai pocăit</span><span class="stream-card-meta">Kwasizabantu România</span></div>
+        </div>
+        <div class="stream-card card-sm" data-hero-index="4" style="--card-color: rgba(16,185,129,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/rcbqC_94tUg/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Mary vom Leuchtturm</span><span class="stream-card-meta">German Translation</span></div>
+        </div>
+        <div class="stream-card card-sm" data-hero-index="5" style="--card-color: rgba(220,38,38,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/GyeOjz9E2uo/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Mary of the Lighthouse</span><span class="stream-card-meta">KwaSizabantu Mission</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ CONTENT CARD 2: Live in This Week + Recommended ═══ -->
+  <div class="discover-content content-card-2">
+    <!-- Live in This Week (250×175 cards) -->
+    <div class="discover-section">
+      <h2 class="discover-section-title">Live in This Week</h2>
+      <div class="card-grid">
+        <div class="scroll-spacer" aria-hidden="true"></div>
+        <div class="stream-card card-md" style="--card-color: rgba(99,102,241,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/TxDAAk7C4WY/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Bibelstunde</span><span class="stream-card-meta">MKSB Berlin</span></div>
+        </div>
+        <div class="stream-card card-md" style="--card-color: rgba(244,63,94,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/uS5eK_i_eas/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Nachtragen</span><span class="stream-card-meta">German Translation</span></div>
+        </div>
+        <div class="stream-card card-md" style="--card-color: rgba(34,197,94,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/D6SMCknm4UA/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Grudges</span><span class="stream-card-meta">KwaSizabantu Mission</span></div>
+        </div>
+        <div class="stream-card card-md" style="--card-color: rgba(168,85,247,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/ENlWX7s3kGc/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Being Faithful</span><span class="stream-card-meta">KwaSizabantu Mission</span></div>
+        </div>
+        <div class="stream-card card-md" style="--card-color: rgba(6,182,212,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/N5mRVC1gV-Y/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Treu sein</span><span class="stream-card-meta">German Translation</span></div>
+        </div>
+        <div class="stream-card card-md" style="--card-color: rgba(251,146,60,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/cw7KLBdeTHQ/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Cizmulițele roșii</span><span class="stream-card-meta">Kwasizabantu România</span></div>
+        </div>
+        <div class="stream-card card-md" style="--card-color: rgba(59,130,246,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/CcBqd_dbDQo/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Două vieți, o ispită</span><span class="stream-card-meta">Kwasizabantu România</span></div>
+        </div>
+        <div class="stream-card card-md" style="--card-color: rgba(236,72,153,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/AZi73S17iKk/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Bibelstunde</span><span class="stream-card-meta">MKSB Berlin</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recommended -->
+    <div class="discover-section">
+      <h2 class="discover-section-title">Recommended</h2>
+      <div class="stream-carousel">
+        <div class="scroll-spacer" aria-hidden="true"></div>
+        <div class="stream-card card-sm" style="--card-color: rgba(220,38,38,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/ufMD94B3lZk/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Anturajul</span><span class="stream-card-meta">Kwasizabantu România</span></div>
+        </div>
+        <div class="stream-card card-sm" style="--card-color: rgba(79,70,229,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/NZfw5PxYtVE/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Gottesdienst KSB SA</span><span class="stream-card-meta">MKSB Berlin</span></div>
+        </div>
+        <div class="stream-card card-sm" style="--card-color: rgba(217,119,6,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/hncfNy8xCus/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Mustard Seed</span><span class="stream-card-meta">KwaSizabantu Mission</span></div>
+        </div>
+        <div class="stream-card card-sm" style="--card-color: rgba(5,150,105,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/Q5aiihMB_sY/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Senfkörner</span><span class="stream-card-meta">German Translation</span></div>
+        </div>
+        <div class="stream-card card-sm" style="--card-color: rgba(147,51,234,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/rcbqC_94tUg/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Mary vom Leuchtturm</span><span class="stream-card-meta">German Translation</span></div>
+        </div>
+        <div class="stream-card card-sm" style="--card-color: rgba(14,165,233,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/cK8CT7e_CuU/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Andacht</span><span class="stream-card-meta">MKSB Berlin</span></div>
+        </div>
+        <div class="stream-card card-sm" style="--card-color: rgba(245,158,11,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/GyeOjz9E2uo/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Mary of the Lighthouse</span><span class="stream-card-meta">KwaSizabantu Mission</span></div>
+        </div>
+        <div class="stream-card card-sm" style="--card-color: rgba(16,185,129,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/Nityj0W5dp8/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Am auzit că te-ai pocăit</span><span class="stream-card-meta">Kwasizabantu România</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KidsLive -->
+    <div class="discover-section">
+      <h2 class="discover-section-title">KidsLive</h2>
+      <div class="stream-carousel">
+        <div class="scroll-spacer" aria-hidden="true"></div>
+        <div class="stream-card card-sm" style="--card-color: rgba(251,191,36,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/hncfNy8xCus/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Mustard Seed</span><span class="stream-card-meta">KidsLive · #345</span></div>
+        </div>
+        <div class="stream-card card-sm" style="--card-color: rgba(52,211,153,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/D6SMCknm4UA/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Grudges</span><span class="stream-card-meta">KidsLive · #343</span></div>
+        </div>
+        <div class="stream-card card-sm" style="--card-color: rgba(129,140,248,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/pBc5bjoRJHo/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Feed your Heart</span><span class="stream-card-meta">KidsLive · #341</span></div>
+        </div>
+        <div class="stream-card card-sm" style="--card-color: rgba(244,114,182,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/ENlWX7s3kGc/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Being Faithful</span><span class="stream-card-meta">KidsLive · #342</span></div>
+        </div>
+        <div class="stream-card card-sm" style="--card-color: rgba(34,211,238,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/owGY0jM6QI0/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Be Kind to One Another</span><span class="stream-card-meta">KidsLive · #340</span></div>
+        </div>
+        <div class="stream-card card-sm" style="--card-color: rgba(248,113,113,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/cCvjgM0ODSY/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">To be Thankful</span><span class="stream-card-meta">KidsLive · #339</span></div>
+        </div>
+        <div class="stream-card card-sm" style="--card-color: rgba(253,186,116,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/ky-xHbnqYBM/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">You are the Light</span><span class="stream-card-meta">KidsLive · #338</span></div>
+        </div>
+        <div class="stream-card card-sm" style="--card-color: rgba(167,139,250,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/I4jp_MPUBK8/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">Lessons by a Dog</span><span class="stream-card-meta">KidsLive · #337</span></div>
+        </div>
+        <div class="stream-card card-sm" style="--card-color: rgba(74,222,128,0.82);">
+          <div class="stream-card-bg" style="background-image: url('https://img.youtube.com/vi/mhTUJSd2z1A/hqdefault.jpg');"></div>
+          <div class="stream-card-overlay"><span class="stream-card-title">To be Kind</span><span class="stream-card-meta">KidsLive · #336</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Bottom Tab Bar ─── -->
+  <nav class="tab-bar">
+    <button class="tab-item active" data-tab="discover">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span>Discover</span>
+    </button>
+    <button class="tab-item" data-tab="upcoming">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>Upcoming</span>
+    </button>
+    <button class="tab-item" data-tab="watchlist">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span>Watchlist</span>
+    </button>
+    <button class="tab-item" data-tab="profile">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>Profile</span>
+    </button>
+  </nav>
+
+  <!-- Hidden: Connection + Broadcast state (kept for realtime logic) -->
+  <div id="connBadge" style="display:none;"><span id="connLabel"></span></div>
+  <div id="modeLabel" style="display:none;">Transcribed Messages</div>
+  <div id="headerRight" style="display:none;"></div>
+  <div id="broadcasterView" style="display:none;">
+    <div id="videoPanel"></div>
+    <div id="broadcastTranscript"></div>
+    <div id="broadcastEmpty"></div>
+    <div id="statusPip"></div>
+    <span id="statusText"></span>
+    <button id="micBtn" style="display:none;"></button>
+    <input id="groqKeyInline" style="display:none;" />
+    <input id="ytUrl" style="display:none;" />
+  </div>
+  <div id="viewerView" style="display:none;">
+    <div id="viewerBody"></div>
+    <div id="viewerWaiting"></div>
+    <button id="wakeBtn" style="display:none;"></button>
+  </div>
+</div>
+
+<!-- QR Overlay -->
+<div class="qr-overlay" id="qrOverlay">
+  <div class="qr-card">
+    <h3>Share Viewer Link</h3>
+    <p>Open this link on your device or scan the QR code.</p>
+    <div style="background: #fff; border-radius: 10px; padding: 12px; margin: 0 auto 16px; width: fit-content;"><img id="qrImg" src="" alt="QR Code" style="display: block; width: 180px; height: 180px;" /></div>
+    <div id="qrUrl" style="font-size: 0.7rem; color: var(--t-text-muted); word-break: break-all; background: var(--t-bg-deep); padding: 8px 12px; border-radius: 6px; margin-bottom: 16px; font-family: monospace; text-align: left;"></div>
+    <button onclick="closeQR()" style="background: none; border: 1px solid var(--t-border); color: var(--t-text-muted); padding: 9px 22px; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 0.82rem;">Close</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// TĒRTIUS — Application Logic
+// ═══════════════════════════════════════════════════════════
+
+// ─── Supabase Client (single instance) ───
+const SB_URL = 'https://kksqdyylahmfaiyhpcga.supabase.co';
+const SB_KEY = 'sb_publishable_dGqHrkm9TO7uCeFWPGZfBw_Liqoe0sY';
+const sbClient = window.supabase.createClient(SB_URL, SB_KEY);
+
+// ─── Screen Router ───
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function toggleCinema() {
+  document.getElementById('appScreen').classList.toggle('cinema-mode');
+}
+
+// ─── Fan Carousel (Mobile) ───
+(function() {
+  const carousel = document.getElementById('fanCarousel');
+  if (!carousel) return;
+  const cards = Array.from(carousel.querySelectorAll('.stream-card'));
+  const n = cards.length;
+  let current = 0;
+  let touchStartX = 0;
+  let touchDelta = 0;
+  const isMobile = () => window.innerWidth < 768;
+
+  function layout() {
+    if (!isMobile()) {
+      cards.forEach(c => c.removeAttribute('data-fan-pos'));
+      return;
+    }
+    cards.forEach((card, i) => {
+      const diff = ((i - current) % n + n) % n;
+      if (diff === 0) card.setAttribute('data-fan-pos', 'center');
+      else if (diff === 1) card.setAttribute('data-fan-pos', 'right');
+      else if (diff === n - 1) card.setAttribute('data-fan-pos', 'left');
+      else if (diff === 2) card.setAttribute('data-fan-pos', 'hidden-right');
+      else if (diff === n - 2) card.setAttribute('data-fan-pos', 'hidden-left');
+      else card.setAttribute('data-fan-pos', 'hidden');
+    });
+  }
+
+  function next() { current = (current + 1) % n; layout(); }
+  function prev() { current = (current - 1 + n) % n; layout(); }
+
+  carousel.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+  carousel.addEventListener('touchmove', e => { touchDelta = e.touches[0].clientX - touchStartX; }, { passive: true });
+  carousel.addEventListener('touchend', () => {
+    if (Math.abs(touchDelta) > 40) {
+      if (touchDelta < 0) next(); else prev();
+    }
+    touchDelta = 0;
+  });
+
+  // Mouse drag for desktop testing
+  let mouseDown = false;
+  carousel.addEventListener('mousedown', e => { mouseDown = true; touchStartX = e.clientX; });
+  carousel.addEventListener('mousemove', e => { if (mouseDown) touchDelta = e.clientX - touchStartX; });
+  carousel.addEventListener('mouseup', () => {
+    if (mouseDown && Math.abs(touchDelta) > 40) {
+      if (touchDelta < 0) next(); else prev();
+    }
+    mouseDown = false; touchDelta = 0;
+  });
+
+  layout();
+  window.addEventListener('resize', layout);
+
+  // Expose for hero sync
+  window.fanCarousel = {
+    setCurrent(i) { current = i; layout(); }
+  };
+})();
+
+// ─── Auto-Update: Fetch Latest Videos from YouTube RSS ───
+(async function() {
+  try {
+    const res = await fetch('/api/latest-videos');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.videos || !data.videos.length) return;
+
+    const fanCards = document.querySelectorAll('#fanCarousel .stream-card');
+    const heroSlots = document.querySelectorAll('.hero-video-slider .hero-video');
+
+    data.videos.forEach((vid, i) => {
+      // Update Card 1 (fan carousel) mini cards
+      if (fanCards[i]) {
+        const bg = fanCards[i].querySelector('.stream-card-bg');
+        const title = fanCards[i].querySelector('.stream-card-title');
+        const meta = fanCards[i].querySelector('.stream-card-meta');
+        if (bg) bg.style.backgroundImage = "url('" + vid.thumbnail + "')";
+        if (title) title.textContent = vid.title;
+        if (meta) meta.textContent = vid.channelName;
+        if (vid.cardColor) fanCards[i].style.setProperty('--card-color', vid.cardColor);
+      }
+
+      // Update Hero YouTube embeds
+      if (heroSlots[i]) {
+        const iframe = heroSlots[i].querySelector('iframe');
+        if (iframe) {
+          const embedUrl = 'https://www.youtube.com/embed/' + vid.videoId +
+            '?autoplay=' + (i === 0 ? '1' : '0') +
+            '&mute=1&loop=1&playlist=' + vid.videoId +
+            '&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&playsinline=1&disablekb=1&fs=0&enablejsapi=1';
+          iframe.src = embedUrl;
+        }
+      }
+    });
+
+    console.log('[Tertius] Auto-updated to latest videos from', data.fetchedAt);
+  } catch (e) {
+    // Silently fail — hardcoded fallback videos remain
+    console.log('[Tertius] Using fallback videos (API unavailable)');
+  }
+})();
+
+// ─── Hero Video Carousel Controller (YouTube Embeds) ───
+(function() {
+  const heroSlots = Array.from(document.querySelectorAll('.hero-video'));
+  const cards = Array.from(document.querySelectorAll('[data-hero-index]'));
+  if (!heroSlots.length || !cards.length) return;
+
+  let heroIndex = 0;
+  let heroTimer = null;
+  const INTERVAL = 8000;
+  const NUM = heroSlots.length;
+
+  function setHeroVideo(index) {
+    heroSlots.forEach((slot, i) => {
+      if (i === index) {
+        slot.classList.add('hero-video--active');
+      } else {
+        slot.classList.remove('hero-video--active');
+      }
+    });
+
+    // Play the new active video, pause others
+    if (ytReady) {
+      Object.entries(ytPlayers).forEach(([key, player]) => {
+        try {
+          const k = parseInt(key);
+          if (k === index) {
+            player.mute();
+            player.playVideo();
+          } else if (typeof player.pauseVideo === 'function') {
+            player.pauseVideo();
+          }
+        } catch(e) {}
+      });
+    }
+
+    // Sync mini cards
+    cards.forEach(c => c.classList.remove('hero-synced-active'));
+    if (cards[index]) cards[index].classList.add('hero-synced-active');
+
+    // Sync fan carousel
+    if (window.fanCarousel) window.fanCarousel.setCurrent(index);
+
+    heroIndex = index;
+  }
+
+  function startAutoplay() {
+    clearInterval(heroTimer);
+    heroTimer = setInterval(() => {
+      setHeroVideo((heroIndex + 1) % NUM);
+    }, INTERVAL);
+  }
+
+  // Click on mini card → switch hero
+  cards.forEach((card, i) => {
+    card.addEventListener('click', () => {
+      setHeroVideo(i);
+      startAutoplay();
+    });
+  });
+
+  // ─── Cinema Mode ───
+  const appEl = document.getElementById('appScreen');
+  const unmuteBtn = document.getElementById('heroUnmuteBtn');
+  const cinemaCloseBtn = document.getElementById('cinemaCloseBtn');
+  let hideTimer = null;
+
+  // ─── YouTube IFrame API ───
+  let ytPlayers = {};
+  let ytReady = false;
+
+  // Load YouTube IFrame API
+  const ytScript = document.createElement('script');
+  ytScript.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(ytScript);
+
+  window.onYouTubeIframeAPIReady = function() {
+    ytReady = true;
+    // Initialize players for all hero iframes
+    heroSlots.forEach((slot, i) => {
+      const iframe = slot.querySelector('iframe');
+      if (iframe) {
+        // Give iframes unique IDs
+        iframe.id = 'heroYT' + i;
+        ytPlayers[i] = new YT.Player(iframe.id, {
+          events: {
+            onReady: function(e) {
+              // First slot: ensure it plays muted
+              if (i === 0) {
+                e.target.mute();
+                e.target.playVideo();
+              }
+            },
+            onStateChange: function(e) {
+              // If a visible slot ends, auto-advance carousel
+              if (e.data === YT.PlayerState.ENDED && i === heroIndex && !appEl.classList.contains('cinema-mode')) {
+                setHeroVideo((heroIndex + 1) % NUM);
+              }
+            }
+          }
+        });
+      }
+    });
+  };
+
+  function getActivePlayer() {
+    return ytPlayers[heroIndex] || null;
+  }
+
+  // ─── Progress bar elements ───
+  const progressWrap = document.getElementById('cinemaProgressWrap');
+  const progressBar = document.getElementById('cinemaProgressBar');
+  const progressHandle = document.getElementById('cinemaProgressHandle');
+  const timeDisplay = document.getElementById('cinemaTime');
+  const fullscreenBtn = document.getElementById('cinemaFullscreenBtn');
+  let progressInterval = null;
+
+  function formatTime(sec) {
+    if (!sec || !isFinite(sec)) return '0:00';
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = Math.floor(sec % 60);
+    if (h > 0) return h + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    return m + ':' + String(s).padStart(2, '0');
+  }
+
+  function updateProgress() {
+    const player = getActivePlayer();
+    if (!player || typeof player.getCurrentTime !== 'function') return;
+    try {
+      const current = player.getCurrentTime() || 0;
+      const duration = player.getDuration() || 0;
+      const pct = duration > 0 ? (current / duration) * 100 : 0;
+      progressBar.style.width = pct + '%';
+      progressHandle.style.left = pct + '%';
+      timeDisplay.textContent = formatTime(current) + ' / ' + formatTime(duration);
+    } catch(e) {}
+  }
+
+  function startProgressUpdater() {
+    stopProgressUpdater();
+    progressInterval = setInterval(updateProgress, 500);
+  }
+
+  function stopProgressUpdater() {
+    if (progressInterval) { clearInterval(progressInterval); progressInterval = null; }
+    progressBar.style.width = '0%';
+    progressHandle.style.left = '0%';
+    timeDisplay.textContent = '0:00 / 0:00';
+  }
+
+  // ─── Seeking via click/drag on progress bar ───
+  function seekFromEvent(e) {
+    const rect = progressWrap.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const player = getActivePlayer();
+    if (player && typeof player.getDuration === 'function') {
+      const duration = player.getDuration() || 0;
+      player.seekTo(pct * duration, true);
+      progressBar.style.width = (pct * 100) + '%';
+      progressHandle.style.left = (pct * 100) + '%';
+    }
+  }
+
+  if (progressWrap) {
+    progressWrap.addEventListener('click', seekFromEvent);
+    let dragging = false;
+    progressWrap.addEventListener('mousedown', (e) => { dragging = true; seekFromEvent(e); });
+    document.addEventListener('mousemove', (e) => { if (dragging) seekFromEvent(e); });
+    document.addEventListener('mouseup', () => { dragging = false; });
+    // Touch support
+    progressWrap.addEventListener('touchstart', (e) => { dragging = true; seekFromEvent(e.touches[0]); }, { passive: true });
+    document.addEventListener('touchmove', (e) => { if (dragging) seekFromEvent(e.touches[0]); }, { passive: true });
+    document.addEventListener('touchend', () => { dragging = false; });
+  }
+
+  // ─── Fullscreen ───
+  const heroEl = document.getElementById('videoHero');
+  let fsHideTimer = null;
+  const cinemaControlsEl = document.getElementById('cinemaControls');
+  const cinemaBottomBarEl = document.getElementById('cinemaBottomBar');
+
+  function toggleFullscreen() {
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      (heroEl.requestFullscreen || heroEl.webkitRequestFullscreen || heroEl.msRequestFullscreen).call(heroEl);
+    } else {
+      (document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen).call(document);
+    }
+  }
+
+  function showFsControls() {
+    cinemaControlsEl.classList.add('fs-visible');
+    cinemaBottomBarEl.classList.add('fs-visible');
+    clearTimeout(fsHideTimer);
+    fsHideTimer = setTimeout(() => {
+      cinemaControlsEl.classList.remove('fs-visible');
+      cinemaBottomBarEl.classList.remove('fs-visible');
+    }, 3000);
+  }
+
+  // On fullscreen change: manage cursor + controls visibility
+  document.addEventListener('fullscreenchange', () => {
+    if (document.fullscreenElement) {
+      showFsControls();
+    } else {
+      cinemaControlsEl.classList.remove('fs-visible');
+      cinemaBottomBarEl.classList.remove('fs-visible');
+    }
+  });
+  document.addEventListener('webkitfullscreenchange', () => {
+    if (document.webkitFullscreenElement) {
+      showFsControls();
+    } else {
+      cinemaControlsEl.classList.remove('fs-visible');
+      cinemaBottomBarEl.classList.remove('fs-visible');
+    }
+  });
+
+  // Mouse/touch in fullscreen shows controls
+  heroEl.addEventListener('mousemove', () => {
+    if (document.fullscreenElement || document.webkitFullscreenElement) showFsControls();
+  });
+  heroEl.addEventListener('touchstart', () => {
+    if (document.fullscreenElement || document.webkitFullscreenElement) showFsControls();
+  }, { passive: true });
+
+  if (fullscreenBtn) fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+  // ─── Cinema Mode (enter/exit) ───
+  function enterCinema() {
+    appEl.classList.add('cinema-mode', 'controls-visible');
+    clearInterval(heroTimer);
+    heroTimer = null;
+
+    const player = getActivePlayer();
+    if (player && typeof player.unMute === 'function') {
+      player.unMute();
+      player.setVolume(100);
+      player.playVideo();
+    }
+    if (unmuteBtn) unmuteBtn.classList.add('unmuted');
+    startProgressUpdater();
+    startControlsHideTimer();
+  }
+
+  function exitCinema() {
+    // Stop transcription if active
+    if (txActive) stopTranscription();
+    appEl.classList.remove('cinema-mode', 'controls-visible');
+    // Exit fullscreen if active
+    if (document.fullscreenElement) {
+      (document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen).call(document);
+    }
+    // Mute all players
+    Object.values(ytPlayers).forEach(p => {
+      try { if (typeof p.mute === 'function') p.mute(); } catch(e) {}
+    });
+    if (unmuteBtn) unmuteBtn.classList.remove('unmuted');
+    clearTimeout(hideTimer);
+    stopProgressUpdater();
+    startAutoplay();
+  }
+
+  function startControlsHideTimer() {
+    clearTimeout(hideTimer);
+    appEl.classList.add('controls-visible');
+    hideTimer = setTimeout(() => {
+      appEl.classList.remove('controls-visible');
+    }, 3000);
+  }
+
+  if (unmuteBtn) unmuteBtn.addEventListener('click', enterCinema);
+  if (cinemaCloseBtn) cinemaCloseBtn.addEventListener('click', exitCinema);
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && appEl.classList.contains('cinema-mode')) exitCinema();
+    // F key for fullscreen in cinema mode
+    if (e.key === 'f' && appEl.classList.contains('cinema-mode')) toggleFullscreen();
+    // Space to play/pause in cinema mode
+    if (e.key === ' ' && appEl.classList.contains('cinema-mode')) {
+      e.preventDefault();
+      const player = getActivePlayer();
+      if (player) {
+        try {
+          const state = player.getPlayerState();
+          if (state === YT.PlayerState.PLAYING) player.pauseVideo();
+          else player.playVideo();
+        } catch(e) {}
+      }
+    }
+  });
+
+  document.addEventListener('mousemove', () => {
+    if (appEl.classList.contains('cinema-mode')) startControlsHideTimer();
+  });
+
+  document.addEventListener('touchstart', () => {
+    if (appEl.classList.contains('cinema-mode')) startControlsHideTimer();
+  }, { passive: true });
+
+  // ─── HMAC Token Generator (Web Crypto API) ───
+  async function generateTertiusToken() {
+    const secret = 'trt-v1-gottesdienst-2026';
+    const timestamp = String(Math.floor(Date.now() / 30000));
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+    );
+    const sig = await crypto.subtle.sign('HMAC', key, enc.encode(timestamp));
+    const hex = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+    return hex.substring(0, 16);
+  }
+
+  // ─── Tab Audio Transcription (Whisper via Groq) ───
+  const transcribeBtn = document.getElementById('cinemaTranscribeBtn');
+  const transcriptEl = document.getElementById('cinemaTranscript');
+  const transcriptInner = document.getElementById('cinemaTranscriptInner');
+  const transcriptStatus = document.getElementById('cinemaTranscriptStatus');
+  const langSelector = document.getElementById('cinemaLangSelector');
+  const langBtns = langSelector ? Array.from(langSelector.querySelectorAll('.cinema-lang-btn')) : [];
+
+  let txStream = null;         // getDisplayMedia stream
+  let txAudioCtx = null;       // AudioContext for capture
+  let txProcessor = null;      // ScriptProcessor
+  let txChunks = [];           // PCM Float32 chunks
+  let txTimer = null;          // send interval
+  let txProcessing = false;    // lock
+  let txLines = [];            // last N transcript lines
+  let txActive = false;
+  let txTargetLang = 'de';     // target language filter
+  let txSkipCount = 0;         // consecutive skipped chunks (other language)
+
+  async function startTranscription() {
+    try {
+      // Request tab audio capture — one-click dialog
+      txStream = await navigator.mediaDevices.getDisplayMedia({
+        video: { width: 1, height: 1, frameRate: 1 },  // minimal video (required by API)
+        audio: true,
+        preferCurrentTab: true,
+        selfBrowserSurface: 'include',
+        systemAudio: 'include',
+      });
+
+      // Stop the video track immediately (we only need audio)
+      txStream.getVideoTracks().forEach(t => t.stop());
+
+      const audioTrack = txStream.getAudioTracks()[0];
+      if (!audioTrack) {
+        alert('Kein Audio-Track verfügbar. Bitte beim Teilen "Tab-Audio" aktivieren.');
+        txStream.getTracks().forEach(t => t.stop());
+        txStream = null;
+        return;
+      }
+
+      // If user stops sharing via browser UI, clean up
+      audioTrack.onended = () => stopTranscription();
+
+      // Set up audio processing
+      txAudioCtx = new AudioContext({ sampleRate: 16000 });
+      const source = txAudioCtx.createMediaStreamSource(new MediaStream([audioTrack]));
+      txProcessor = txAudioCtx.createScriptProcessor(4096, 1, 1);
+      txChunks = [];
+      txProcessor.onaudioprocess = (e) => {
+        txChunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+      };
+      source.connect(txProcessor);
+      txProcessor.connect(txAudioCtx.destination);
+
+      // Send chunks every 4 seconds
+      txTimer = setInterval(sendTranscriptChunk, 4000);
+
+      // UI
+      txActive = true;
+      txSkipCount = 0;
+      transcribeBtn.classList.add('transcribing');
+      transcriptEl.classList.add('active');
+      transcriptStatus.classList.add('active');
+      transcriptStatus.textContent = 'Transcribing…';
+      if (langSelector) langSelector.classList.add('visible');
+      txLines = [];
+      transcriptInner.innerHTML = '';
+
+    } catch (e) {
+      if (e.name !== 'NotAllowedError') {
+        console.error('Tab-Audio Capture Fehler:', e);
+        alert('Audio-Capture fehlgeschlagen: ' + e.message);
+      }
+    }
+  }
+
+  function stopTranscription() {
+    if (txProcessor) { txProcessor.disconnect(); txProcessor = null; }
+    if (txAudioCtx) { txAudioCtx.close(); txAudioCtx = null; }
+    if (txStream) { txStream.getTracks().forEach(t => t.stop()); txStream = null; }
+    if (txTimer) { clearInterval(txTimer); txTimer = null; }
+    txChunks = [];
+    txProcessing = false;
+    txActive = false;
+
+    transcribeBtn.classList.remove('transcribing');
+    transcriptEl.classList.remove('active');
+    transcriptStatus.classList.remove('active');
+    if (langSelector) langSelector.classList.remove('visible');
+  }
+
+  function toggleTranscription() {
+    if (txActive) stopTranscription();
+    else startTranscription();
+  }
+
+  // WAV encoder (16-bit PCM)
+  function encodeTxWAV(chunks, sampleRate) {
+    const samples = chunks.reduce((acc, c) => {
+      const a = new Float32Array(acc.length + c.length);
+      a.set(acc); a.set(c, acc.length); return a;
+    }, new Float32Array(0));
+    const buf = new ArrayBuffer(44 + samples.length * 2);
+    const view = new DataView(buf);
+    const w = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
+    w(0, 'RIFF'); view.setUint32(4, 36 + samples.length * 2, true);
+    w(8, 'WAVE'); w(12, 'fmt '); view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true); view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true); view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true); view.setUint16(34, 16, true);
+    w(36, 'data'); view.setUint32(40, samples.length * 2, true);
+    let offset = 44;
+    for (let i = 0; i < samples.length; i++) {
+      const s = Math.max(-1, Math.min(1, samples[i]));
+      view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+      offset += 2;
+    }
+    return new Blob([buf], { type: 'audio/wav' });
+  }
+
+  // Language mapping: Whisper returns ISO codes, some need normalization
+  const LANG_MAP = {
+    'de': 'de', 'german': 'de', 'deutsch': 'de',
+    'en': 'en', 'english': 'en',
+    'zu': 'zu', 'zulu': 'zu',
+    'af': 'zu',  // Afrikaans sometimes detected for Zulu
+    'xh': 'zu',  // Xhosa close to Zulu
+    'st': 'zu',  // Sotho group
+  };
+
+  function normalizeLang(detected) {
+    if (!detected) return 'unknown';
+    const d = detected.toLowerCase().trim();
+    return LANG_MAP[d] || d;
+  }
+
+  async function sendTranscriptChunk() {
+    if (!txChunks.length || txProcessing) return;
+    txProcessing = true;
+    const chunks = [...txChunks];
+    txChunks = [];
+    const blob = encodeTxWAV(chunks, txAudioCtx?.sampleRate || 16000);
+
+    try {
+      const fd = new FormData();
+      fd.append('file', blob, 'audio.wav');
+      fd.append('model', 'whisper-large-v3-turbo');
+      // No language param → auto-detect
+      fd.append('response_format', 'verbose_json');
+
+      // Generate time-based HMAC token (matches server-side verification)
+      const txToken = await generateTertiusToken();
+
+      const res = await fetch('/api/transcribe', {
+        method: 'POST',
+        headers: { 'X-Tertius-Token': txToken },
+        body: fd,
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error('Whisper API Error:', errText);
+        txProcessing = false;
+        return;
+      }
+
+      const data = await res.json();
+      const clean = data.text?.trim();
+      const detectedLang = normalizeLang(data.language);
+
+      console.log(`[Transcribe] detected=${data.language} → ${detectedLang} | target=${txTargetLang} | "${clean?.substring(0, 50)}"`);
+
+      // Filter: only show if detected language matches target
+      if (detectedLang === txTargetLang) {
+        txSkipCount = 0;
+        if (clean && clean.length > 2) {
+          txLines.push(clean);
+          if (txLines.length > 4) txLines.shift();
+          renderTranscript();
+          transcriptStatus.textContent = 'Transcribing…';
+          // Broadcast to viewers
+          if (typeof broadcast === 'function') broadcast(clean);
+        }
+      } else {
+        // Wrong language — skip, show waiting indicator
+        txSkipCount++;
+        if (txSkipCount >= 2) {
+          transcriptStatus.textContent = detectedLang.toUpperCase() + ' erkannt — warte auf ' + txTargetLang.toUpperCase() + '…';
+        }
+      }
+    } catch (e) {
+      console.error('Transcription error:', e);
+    }
+    txProcessing = false;
+  }
+
+  function renderTranscript() {
+    transcriptInner.innerHTML = '';
+    txLines.forEach((line, i) => {
+      const el = document.createElement('div');
+      el.className = 'cinema-transcript-line' + (i < txLines.length - 1 ? ' fading' : '');
+      el.textContent = line;
+      transcriptInner.appendChild(el);
+    });
+  }
+
+  if (transcribeBtn) transcribeBtn.addEventListener('click', toggleTranscription);
+
+  // Language selector
+  langBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      txTargetLang = btn.dataset.lang;
+      langBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      // Clear transcript when switching language
+      txLines = [];
+      txSkipCount = 0;
+      transcriptInner.innerHTML = '';
+      transcriptStatus.textContent = 'Transcribing (' + txTargetLang.toUpperCase() + ')…';
+    });
+  });
+
+  // Start
+  setHeroVideo(0);
+  startAutoplay();
+})();
+
+// ─── Search Pill Toggle ───
+function toggleSearch() {
+  const pill = document.getElementById('headerPill');
+  const input = document.getElementById('searchInput');
+  pill.classList.toggle('expanded');
+  if (pill.classList.contains('expanded')) {
+    input.focus();
+  } else {
+    input.value = '';
+    input.blur();
+  }
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    const pill = document.getElementById('headerPill');
+    if (pill && pill.classList.contains('expanded')) toggleSearch();
+  }
+});
+
+// ─── Header Clock ───
+(function updateClock() {
+  const el = document.getElementById('headerClock');
+  if (el) {
+    const now = new Date();
+    el.textContent = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  }
+  setTimeout(updateClock, 10000);
+})();
+
+// ─── Hero Scroll Blur (matches Construction: offset/80 clamped 0–2.5) ───
+(function() {
+  const app = document.getElementById('appScreen');
+  if (!app) return;
+  const heroEl = document.getElementById('videoHero');
+  const threshold = window.innerHeight * 0.3;
+
+  function getScrollY() {
+    // Try all possible scroll containers
+    return Math.max(app.scrollTop, document.documentElement.scrollTop, window.pageYOffset || 0);
+  }
+
+  function onScroll() {
+    if (!heroEl) return;
+    requestAnimationFrame(() => {
+      const scrollY = getScrollY();
+
+      // Blur effect
+      const blur = Math.min(scrollY / 80, 2.5);
+      heroEl.style.filter = blur > 0.5 ? `blur(${blur}px)` : 'none';
+
+      // Parallax: after threshold, hero moves up at 0.35x speed
+      if (scrollY > threshold) {
+        heroEl.style.transform = `translateY(-${(scrollY - threshold) * 0.35}px)`;
+      } else {
+        heroEl.style.transform = 'translateY(0)';
+      }
+    });
+  }
+
+  app.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('scroll', onScroll, { passive: true });
+  document.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+})();
+
+// ─── Boot: Check session → Splash → Welcome ───
+window.addEventListener('DOMContentLoaded', async () => {
+  // Check URL params for auto-viewer (QR code link)
+  const p = new URLSearchParams(location.search);
+  if (p.get('mode') === 'viewer') {
+    mode = 'viewer';
+    await connectAndLaunch();
+    return;
+  }
+
+  // Check existing Supabase session
+  const { data: { session } } = await sbClient.auth.getSession();
+  if (session) {
+    // User is already logged in → skip to app
+    currentUser = session.user;
+    await loadProfile();
+    mode = 'viewer';
+    await connectAndLaunch();
+    return;
+  }
+
+  // No session → stay on Splash (animations play automatically)
+});
+
+// ─── Auth State Listener ───
+sbClient.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_OUT') {
+    currentUser = null;
+    currentProfile = null;
+    showScreen('splashScreen');
+  }
+});
+
+// ─── User State ───
+let currentUser = null;
+let currentProfile = null;
+
+async function loadProfile() {
+  if (!currentUser) return;
+  const { data } = await sbClient
+    .from('profiles')
+    .select('*')
+    .eq('id', currentUser.id)
+    .single();
+  if (data) currentProfile = data;
+}
+
+// ─── Sign In (Supabase Auth) ───
+async function handleSignIn() {
+  const email = document.getElementById('signInEmail').value.trim();
+  const password = document.getElementById('signInPassword').value.trim();
+
+  if (!email || !password) {
+    return showAuthError('signInError', 'Please enter email and password.');
+  }
+
+  // Show loading state
+  const btn = document.querySelector('#signInScreen .btn-primary');
+  const originalText = btn.textContent;
+  btn.textContent = 'Signing in…';
+  btn.style.opacity = '0.7';
+  btn.style.pointerEvents = 'none';
+
+  const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
+
+  btn.textContent = originalText;
+  btn.style.opacity = '1';
+  btn.style.pointerEvents = 'auto';
+
+  if (error) {
+    return showAuthError('signInError', error.message === 'Invalid login credentials'
+      ? 'Wrong email or password.'
+      : error.message);
+  }
+
+  currentUser = data.user;
+  await loadProfile();
+  mode = currentProfile?.role === 'broadcaster' ? 'broadcast' : 'viewer';
+  await connectAndLaunch();
+}
+
+// ─── Sign Up (Supabase Auth) ───
+async function handleSignUp() {
+  const name = document.getElementById('signUpName').value.trim();
+  const email = document.getElementById('signUpEmail').value.trim();
+  const pw = document.getElementById('signUpPassword').value.trim();
+  const pw2 = document.getElementById('signUpPasswordConfirm').value.trim();
+
+  if (!name || !email || !pw) {
+    return showAuthError('signUpError', 'Please fill in all fields.');
+  }
+  if (pw.length < 6) {
+    return showAuthError('signUpError', 'Password must be at least 6 characters.');
+  }
+  if (pw !== pw2) {
+    return showAuthError('signUpError', 'Passwords do not match.');
+  }
+
+  // Show loading state
+  const btn = document.querySelector('#signUpScreen .btn-primary');
+  const originalText = btn.textContent;
+  btn.textContent = 'Creating account…';
+  btn.style.opacity = '0.7';
+  btn.style.pointerEvents = 'none';
+
+  const { data, error } = await sbClient.auth.signUp({
+    email,
+    password: pw,
+    options: { data: { name } }
+  });
+
+  btn.textContent = originalText;
+  btn.style.opacity = '1';
+  btn.style.pointerEvents = 'auto';
+
+  if (error) {
+    return showAuthError('signUpError', error.message);
+  }
+
+  // Check if email confirmation is required
+  if (data.user && !data.session) {
+    showAuthError('signUpError', 'Check your email to confirm your account.');
+    // Style as success, not error
+    const el = document.getElementById('signUpError');
+    el.style.color = 'var(--t-green)';
+    setTimeout(() => { el.style.color = 'var(--t-error)'; }, 5000);
+    return;
+  }
+
+  // Auto-login after sign up (if email confirmation disabled)
+  if (data.session) {
+    currentUser = data.user;
+    await loadProfile();
+    mode = 'viewer';
+    await connectAndLaunch();
+  }
+}
+
+// ─── Sign Out ───
+async function handleSignOut() {
+  await sbClient.auth.signOut();
+  currentUser = null;
+  currentProfile = null;
+  showScreen('splashScreen');
+}
+
+function showAuthError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 5000);
+}
+
+// ─── App Launch ───
+async function connectAndLaunch() {
+  try {
+    await connectRealtime();
+    showScreen('appScreen');
+    launchMode();
+  } catch(e) {
+    console.error('Connection failed:', e);
+    showScreen('splashScreen');
+  }
+}
+
+function launchMode() {
+  const signOutBtn = currentUser
+    ? `<button class="btn-icon" onclick="handleSignOut()" title="Sign Out" style="font-size: 0.72rem; opacity: 0.7;">↪ Sign Out</button>`
+    : '';
+
+  if (mode === 'broadcast') {
+    document.getElementById('modeLabel').textContent = 'Broadcaster';
+    document.getElementById('broadcasterView').style.display = 'flex';
+    document.getElementById('broadcasterView').style.flexDirection = 'column';
+    document.getElementById('groqKeyInline').value = groqApiKey;
+    document.getElementById('headerRight').innerHTML = `
+      <button class="btn-icon" onclick="toggleVideoPanel()" id="vidToggleBtn">📺 Video</button>
+      <button class="btn-icon" onclick="showQR()">📱 QR</button>
+      ${signOutBtn}
+    `;
+  } else {
+    document.getElementById('modeLabel').textContent = 'Transcribed Messages';
+    document.getElementById('viewerView').style.display = 'flex';
+    document.getElementById('viewerView').style.flexDirection = 'column';
+    document.getElementById('headerRight').innerHTML = signOutBtn;
+  }
+}
+
+// ─── State ───
+let mode = 'viewer';
+let channel = null;
+let isListening = false;
+let audioStream = null;
+let audioChunks = [];
+let chunkTimer = null;
+let isProcessing = false;
+let lines = [];
+let lineCounter = 0;
+let fontScale = 1;
+let wakeLock = null;
+let groqApiKey = '';
+const CHANNEL_NAME = 'gottesdienst-live-v1';
+
+// ─── Supabase Realtime ───
+function connectRealtime() {
+  return new Promise((resolve, reject) => {
+    channel = sbClient.channel(CHANNEL_NAME, { config: { broadcast: { self: false } } });
+    channel
+      .on('broadcast', { event: 'tx' }, ({ payload }) => {
+        if (mode === 'viewer') receiveText(payload);
+      })
+      .subscribe(status => {
+        if (status === 'SUBSCRIBED') { setConn('connected', 'Connected'); resolve(); }
+        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          setConn('disconnected', 'Error'); reject(new Error(status));
+        }
+      });
+    setTimeout(() => reject(new Error('Timeout')), 10000);
+  });
+}
+
+function broadcast(text) {
+  if (!channel) return;
+  channel.send({ type: 'broadcast', event: 'tx', payload: { text, id: ++lineCounter } });
+  setConn('live', 'Live');
+  setTimeout(() => setConn('connected', 'Connected'), 2500);
+}
+
+function setConn(state, label) {
+  const b = document.getElementById('connBadge');
+  if (!b) return;
+  b.className = 'conn-badge ' + state;
+  document.getElementById('connLabel').textContent = label;
+}
+
+// ─── Video ───
+let videoPanelOpen = true;
+function loadYT() {
+  const raw = document.getElementById('ytUrl').value.trim();
+  const id = raw.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/)?.[1];
+  if (!id) { alert('Invalid YouTube URL'); return; }
+  document.getElementById('videoPanel').innerHTML =
+    `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1&cc_load_policy=1&cc_lang_pref=de" allow="autoplay;encrypted-media" allowfullscreen></iframe>`;
+}
+function toggleVideoPanel() {
+  videoPanelOpen = !videoPanelOpen;
+  document.getElementById('videoPanel').classList.toggle('collapsed', !videoPanelOpen);
+  document.getElementById('vidToggleBtn')?.classList.toggle('active', !videoPanelOpen);
+}
+
+// ─── Microphone & Whisper ───
+let audioContext = null;
+let scriptProcessor = null;
+let pcmChunks = [];
+
+async function toggleMic() { isListening ? stopMic() : await startMic(); }
+
+async function startMic() {
+  if (!groqApiKey) { alert('Groq API Key required!'); return; }
+  try {
+    audioStream = await navigator.mediaDevices.getUserMedia({ audio: { sampleRate: 16000, channelCount: 1 } });
+    audioContext = new AudioContext({ sampleRate: 16000 });
+    const source = audioContext.createMediaStreamSource(audioStream);
+    scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+    pcmChunks = [];
+    scriptProcessor.onaudioprocess = (e) => pcmChunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+    source.connect(scriptProcessor);
+    scriptProcessor.connect(audioContext.destination);
+    isListening = true;
+    chunkTimer = setInterval(sendChunk, 4000);
+    setMicUI(true);
+  } catch(e) { alert('Microphone error: ' + e.message); }
+}
+
+function stopMic() {
+  scriptProcessor?.disconnect(); scriptProcessor = null;
+  audioContext?.close(); audioContext = null;
+  audioStream?.getTracks().forEach(t => t.stop()); audioStream = null;
+  clearInterval(chunkTimer); chunkTimer = null;
+  pcmChunks = []; audioChunks = []; isListening = false; isProcessing = false;
+  setMicUI(false);
+}
+
+function setMicUI(on) {
+  const btn = document.getElementById('micBtn');
+  const pip = document.getElementById('statusPip');
+  if (!btn || !pip) return;
+  btn.textContent = on ? '⏹ Stop' : '🎤 Start Microphone';
+  btn.classList.toggle('active', on);
+  pip.className = 'status-pip' + (on ? ' active' : '');
+  document.getElementById('statusText').textContent = on ? 'Transcribing…' : 'Ready';
+}
+
+function encodeWAV(chunks, sampleRate) {
+  const samples = chunks.reduce((acc, c) => { const a = new Float32Array(acc.length + c.length); a.set(acc); a.set(c, acc.length); return a; }, new Float32Array(0));
+  const buf = new ArrayBuffer(44 + samples.length * 2);
+  const view = new DataView(buf);
+  const write = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
+  write(0, 'RIFF'); view.setUint32(4, 36 + samples.length * 2, true);
+  write(8, 'WAVE'); write(12, 'fmt '); view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true); view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true); view.setUint16(34, 16, true);
+  write(36, 'data'); view.setUint32(40, samples.length * 2, true);
+  let offset = 44;
+  for (let i = 0; i < samples.length; i++) {
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+    offset += 2;
+  }
+  return new Blob([buf], { type: 'audio/wav' });
+}
+
+async function sendChunk() {
+  if (!pcmChunks.length || isProcessing) return;
+  isProcessing = true;
+  const pip = document.getElementById('statusPip');
+  if (pip) pip.className = 'status-pip processing';
+  const chunks = [...pcmChunks]; pcmChunks = [];
+  const blob = encodeWAV(chunks, audioContext?.sampleRate || 16000);
+  try {
+    const fd = new FormData();
+    fd.append('file', blob, 'audio.wav');
+    fd.append('model', 'whisper-large-v3-turbo');
+    fd.append('language', 'de');
+    fd.append('response_format', 'json');
+    const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+      method: 'POST', headers: { Authorization: `Bearer ${groqApiKey}` }, body: fd
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const { text } = await res.json();
+    const clean = text?.trim();
+    if (clean && clean.length > 2) { lines.push({ text: clean }); renderBroadcast(); broadcast(clean); }
+  } catch(e) { console.error('Whisper:', e); }
+  isProcessing = false;
+  if (isListening && pip) pip.className = 'status-pip active';
+}
+
+function renderBroadcast() {
+  const el = document.getElementById('broadcastTranscript');
+  if (!el) return;
+  const empty = document.getElementById('broadcastEmpty');
+  if (empty) empty.style.display = 'none';
+  const show = lines.slice(-10);
+  el.innerHTML = '';
+  show.forEach((l, i) => {
+    const age = show.length - 1 - i;
+    const d = document.createElement('div');
+    d.className = 't-line ' + (age === 0 ? 't-current' : age <= 2 ? 't-recent' : 't-old');
+    d.textContent = l.text;
+    if (age === 0) { const c = document.createElement('span'); c.className = 't-cursor'; d.appendChild(c); }
+    el.appendChild(d);
+  });
+  el.scrollTop = el.scrollHeight;
+}
+
+// ─── Viewer ───
+function receiveText({ text }) {
+  const w = document.getElementById('viewerWaiting');
+  if (w) w.style.display = 'none';
+  lines.push({ text });
+  renderViewer();
+  setConn('live', 'Live');
+  setTimeout(() => setConn('connected', 'Connected'), 2200);
+}
+
+function renderViewer() {
+  const body = document.getElementById('viewerBody');
+  if (!body) return;
+  body.querySelectorAll('.t-line').forEach(e => e.remove());
+  const show = lines.slice(-5);
+  const frag = document.createDocumentFragment();
+  show.forEach((l, i) => {
+    const age = show.length - 1 - i;
+    const d = document.createElement('div');
+    d.className = 't-line ' + (age === 0 ? 't-current' : age <= 1 ? 't-recent' : 't-old');
+    const baseSizes = ['clamp(0.95rem,2.5vw,1.5rem)', 'clamp(1.2rem,3.5vw,2rem)', 'clamp(1.8rem,5vw,3rem)'];
+    const sizeIdx = age === 0 ? 2 : age === 1 ? 1 : 0;
+    d.style.fontSize = `calc(${fontScale} * ${baseSizes[sizeIdx]})`;
+    d.textContent = l.text;
+    if (age === 0) { const c = document.createElement('span'); c.className = 't-cursor'; d.appendChild(c); }
+    frag.appendChild(d);
+  });
+  const waiting = document.getElementById('viewerWaiting');
+  if (waiting) body.insertBefore(frag, waiting);
+  body.scrollTop = body.scrollHeight;
+}
+
+function adjustFont(dir) {
+  fontScale = Math.max(0.6, Math.min(2.0, fontScale + dir * 0.15));
+  renderViewer();
+}
+
+// ─── Wake Lock ───
+async function toggleWakeLock() {
+  const btn = document.getElementById('wakeBtn');
+  if (!btn) return;
+  if (wakeLock) {
+    await wakeLock.release(); wakeLock = null;
+    btn.classList.remove('active'); btn.textContent = '☀ Stay Active';
+  } else {
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+      btn.classList.add('active'); btn.textContent = '☀ Active';
+      wakeLock.addEventListener('release', () => {
+        wakeLock = null; btn.classList.remove('active'); btn.textContent = '☀ Stay Active';
+      });
+    } catch { alert('Wake Lock not supported on this device.'); }
+  }
+}
+
+// ─── QR Code ───
+function showQR() {
+  const cfg = getSavedConfig();
+  const base = location.href.split('?')[0];
+  const sbUrl = cfg.sbUrl || '';
+  const sbKey = cfg.sbKey || '';
+  if (!sbUrl || !sbKey) { alert('No connection found.'); return; }
+  const u = btoa(encodeURIComponent(sbUrl));
+  const k = btoa(encodeURIComponent(sbKey));
+  const viewerUrl = `${base}?mode=viewer&u=${encodeURIComponent(u)}&k=${encodeURIComponent(k)}`;
+  document.getElementById('qrUrl').textContent = base + '?mode=viewer';
+  document.getElementById('qrImg').src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(viewerUrl);
+  document.getElementById('qrOverlay').classList.add('open');
+}
+function closeQR() { document.getElementById('qrOverlay').classList.remove('open'); }
+
+// ─── Keyboard Shortcuts ───
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input')) return;
+  if (e.key === 'm' && mode === 'broadcast') toggleMic();
+  if (e.key === 'v' && mode === 'broadcast') toggleVideoPanel();
+  if (e.key === 'q') showQR();
+  if (e.key === 'Escape') closeQR();
+});
+</script>
+</body>
+</html>

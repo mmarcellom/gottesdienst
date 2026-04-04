@@ -1,0 +1,104 @@
+/* ═══════════════════════════════════════════════════════════
+   TĒRTIUS — Design Tokens
+   Brand: Crane/Heron, Dark Navy, Yellow CTA
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ─── Colors: Dark Mode ─── */
+  --t-bg:           #1D2B3A;
+  --t-bg-deep:      #151f2b;
+  --t-surface:      #243447;
+  --t-surface2:     #2a3c52;
+  --t-border:       #334863;
+
+  /* ─── Brand ─── */
+  --t-yellow:       #F5C518;
+  --t-yellow-hover: #e3b616;
+  --t-yellow-text:  #1D2B3A;
+
+  /* ─── Gray / Accent ─── */
+  --t-gray:         #898989;
+  --t-gray-light:   #eaeaea;
+
+  /* ─── Text ─── */
+  --t-text:         #f2f2f2;
+  --t-text-mid:     #e0e0e0;
+  --t-text-muted:   rgba(255,255,255,0.35);
+  --t-text-placeholder: rgba(255,255,255,0.35);
+
+  /* ─── Semantic ─── */
+  --t-live:         #e05252;
+  --t-green:        #52c07a;
+  --t-error:        #e05252;
+
+  /* ─── Blob Gradient (decorative background) ─── */
+  --t-blob:         radial-gradient(
+    circle farthest-corner at 50% 50% in oklab,
+    oklab(25.2% -0.010 -0.032 / 95%) 0%,
+    oklab(0% 0 -.0001 / 0%) 70%
+  );
+
+  /* ─── Typography ─── */
+  --t-font-title:   'Rockwell', 'Rockwell Nova', 'Georgia', serif;
+  --t-font-subtitle:'Galvji', 'Helvetica Neue', sans-serif;
+  --t-font-body:    'Source Sans 3', 'Inter', system-ui, sans-serif;
+  --t-font-display: 'Playfair Display', serif;
+
+  /* ─── Spacing Scale (4px base) ─── */
+  --t-sp-1:  4px;
+  --t-sp-2:  8px;
+  --t-sp-3:  12px;
+  --t-sp-4:  16px;
+  --t-sp-5:  20px;
+  --t-sp-6:  24px;
+  --t-sp-7:  28px;
+  --t-sp-8:  32px;
+  --t-sp-10: 40px;
+  --t-sp-12: 48px;
+  --t-sp-16: 64px;
+  --t-sp-20: 80px;
+
+  /* ─── Radii ─── */
+  --t-radius-sm:    8px;
+  --t-radius-md:    12px;
+  --t-radius-lg:    16px;
+  --t-radius-pill:  28px;
+  --t-radius-full:  9999px;
+
+  /* ─── Shadows ─── */
+  --t-shadow-sm:    0 1px 3px rgba(0,0,0,0.2);
+  --t-shadow-md:    0 4px 12px rgba(0,0,0,0.25);
+  --t-shadow-lg:    0 8px 32px rgba(0,0,0,0.3);
+
+  /* ─── Transitions ─── */
+  --t-ease:         cubic-bezier(0.4, 0, 0.2, 1);
+  --t-duration:     200ms;
+  --t-duration-slow:350ms;
+
+  /* ─── Layout ─── */
+  --t-content-max:  440px;
+  --t-page-padding: 32px;
+
+  /* ─── Button Heights ─── */
+  --t-btn-height:   52px;
+}
+
+/* ─── Breakpoint-specific overrides ─── */
+@media (max-width: 480px) {
+  :root {
+    --t-page-padding: 24px;
+    --t-content-max:  100%;
+  }
+}
+
+@media (min-width: 768px) {
+  :root {
+    --t-content-max:  420px;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --t-content-max:  440px;
+  }
+}

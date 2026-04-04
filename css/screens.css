@@ -1,0 +1,1517 @@
+/* ═══════════════════════════════════════════════════════════
+   TĒRTIUS — Screen Layouts
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── Screen Container (shared) ─── */
+.screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100dvh;
+  position: relative;
+  overflow: hidden;
+}
+
+.screen.active {
+  display: flex;
+}
+
+/* ═══ SPLASH SCREEN ═══ */
+#splashScreen {
+  justify-content: center;
+  background: var(--t-bg);
+}
+
+#splashScreen .logo-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: visible;
+}
+
+#splashScreen .crane-flight-x { overflow: visible; }
+#splashScreen .logo-crane { width: 200px; height: 100px; margin-left: 25px; overflow: visible; }
+#splashScreen .logo-title { font-size: 54px; margin-top: 35px; line-height: 0.85; margin-bottom: -3px; }
+#splashScreen .logo-subtitle-row { gap: 8px; }
+#splashScreen .logo-subtitle-text { font-size: 9px; }
+#splashScreen .logo-subtitle-line { height: 1px; }
+#splashScreen .wave-bar { width: 2px; }
+
+@media (min-width: 768px) {
+  #splashScreen .logo-crane { width: 320px; height: 160px; margin-left: 40px; }
+  #splashScreen .logo-title { font-size: 72px; }
+  #splashScreen .logo-subtitle-row { gap: 12px; }
+  #splashScreen .logo-subtitle-text { font-size: 14px; }
+  #splashScreen .wave-bar { width: 2.5px; }
+}
+
+@media (min-width: 1024px) {
+  #splashScreen .logo-crane { width: 360px; height: 180px; margin-left: 50px; }
+  #splashScreen .logo-title { font-size: 84px; }
+  #splashScreen .logo-subtitle-row { gap: 14px; }
+  #splashScreen .logo-subtitle-text { font-size: 16px; }
+  #splashScreen .wave-bar { width: 3px; }
+}
+
+/* ═══ SPLASH BUTTONS ═══ */
+#splashScreen .splash-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: var(--t-content-max);
+  padding: 0 var(--t-page-padding);
+  margin-top: var(--t-sp-16);
+}
+
+@media (min-width: 1024px) {
+  #splashScreen .splash-buttons {
+    max-width: 400px;
+  }
+}
+
+/* ═══ AUTH SCREENS (Sign In / Sign Up) ═══ */
+#signInScreen,
+#signUpScreen {
+  background: var(--t-bg);
+}
+
+.auth-header {
+  width: 100%;
+  padding: var(--t-sp-20) var(--t-page-padding) 0;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.auth-body {
+  display: flex;
+  flex: 1;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  padding: 40px var(--t-page-padding) 0;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: var(--t-content-max);
+}
+
+.auth-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--t-sp-8);
+}
+
+.auth-forgot {
+  margin-top: 12px;
+  align-self: flex-end;
+  color: rgba(255,255,255,0.75);
+}
+
+.auth-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: var(--t-sp-12);
+  width: 100%;
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .auth-buttons {
+    margin-top: var(--t-sp-12);
+  }
+
+  .auth-header .t-title-lg {
+    font-size: 32px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .auth-buttons {
+    flex-direction: column;
+    max-width: var(--t-content-max);
+    gap: 12px;
+  }
+
+  .auth-header .t-title-lg {
+    font-size: 36px;
+  }
+
+  .auth-fields .t-label {
+    font-size: 14px;
+  }
+}
+
+/* ═══ APP SHELL — DISCOVER (Apple TV Style) ═══ */
+#appScreen {
+  min-height: 100dvh;
+  background: #000;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex-wrap: nowrap;
+  transition: background 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+#appScreen::-webkit-scrollbar {
+  width: 0;
+  display: none;
+}
+
+/* ─── Cinema Mode ─── */
+#appScreen.cinema-mode {
+  background: #000;
+}
+
+#appScreen.cinema-mode .discover-header {
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+#appScreen.cinema-mode .discover-video-hero {
+  height: 100dvh;
+  max-height: none;
+  z-index: 60;
+}
+
+#appScreen.cinema-mode .discover-content,
+#appScreen.cinema-mode .hero-spacer {
+  transform: translateY(100vh);
+  opacity: 0;
+  pointer-events: none;
+}
+
+#appScreen.cinema-mode .tab-bar {
+  transform: translateX(-50%) translateY(calc(100% + 40px));
+  opacity: 0;
+  pointer-events: none;
+}
+
+#appScreen.cinema-mode .hero-unmute-btn {
+  display: none;
+}
+
+/* LIVE badge stays in place during cinema mode */
+#appScreen.cinema-mode .video-live-badge {
+  top: 14px;
+  left: 14px;
+  transition: none;
+}
+
+/* Cinema controls overlay — X button + fullscreen */
+.cinema-controls {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 20px 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+#appScreen.cinema-mode .cinema-controls {
+  pointer-events: auto;
+}
+
+#appScreen.cinema-mode.controls-visible .cinema-controls {
+  opacity: 1;
+}
+
+/* Fullscreen: controls always interactive, visible on hover */
+.discover-video-hero:fullscreen .cinema-controls,
+.discover-video-hero:-webkit-full-screen .cinema-controls {
+  pointer-events: auto;
+}
+
+.discover-video-hero:fullscreen .cinema-controls.fs-visible,
+.discover-video-hero:-webkit-full-screen .cinema-controls.fs-visible {
+  opacity: 1;
+}
+
+.cinema-close-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.cinema-close-pill:hover {
+  background: rgba(255,255,255,0.3);
+  transform: scale(1.1);
+}
+
+/* Fullscreen button (same style as close pill) */
+.cinema-control-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+  margin-right: 10px;
+}
+
+.cinema-control-btn:hover {
+  background: rgba(255,255,255,0.3);
+  transform: scale(1.1);
+}
+
+/* ─── Cinema Bottom Bar (progress + time) ─── */
+.cinema-bottom-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 24px 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+#appScreen.cinema-mode .cinema-bottom-bar {
+  pointer-events: auto;
+}
+
+#appScreen.cinema-mode.controls-visible .cinema-bottom-bar {
+  opacity: 1;
+}
+
+/* Fullscreen: bottom bar */
+.discover-video-hero:fullscreen .cinema-bottom-bar,
+.discover-video-hero:-webkit-full-screen .cinema-bottom-bar {
+  pointer-events: auto;
+}
+
+.discover-video-hero:fullscreen .cinema-bottom-bar.fs-visible,
+.discover-video-hero:-webkit-full-screen .cinema-bottom-bar.fs-visible {
+  opacity: 1;
+}
+
+/* ─── Transcription Overlay (cinema subtitles) ─── */
+.cinema-transcript {
+  position: absolute;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  max-width: 800px;
+  z-index: 65;
+  pointer-events: none;
+  display: none;
+}
+
+.cinema-transcript.active {
+  display: block;
+}
+
+.cinema-transcript-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+
+.cinema-transcript-line {
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-family: var(--t-font-body, sans-serif);
+  font-size: 18px;
+  line-height: 1.5;
+  text-align: center;
+  max-width: 100%;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: transcriptFadeIn 0.3s ease;
+}
+
+.cinema-transcript-line.fading {
+  opacity: 0.5;
+  font-size: 15px;
+}
+
+@keyframes transcriptFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Transcribe button active state */
+.cinema-control-btn.transcribing {
+  background: rgba(224, 82, 82, 0.6);
+  border-color: rgba(224, 82, 82, 0.5);
+}
+
+.cinema-control-btn.transcribing svg {
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+/* Status badge for transcription */
+.cinema-transcript-status {
+  position: absolute;
+  top: 60px;
+  left: 24px;
+  z-index: 65;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--t-font-body, sans-serif);
+  font-size: 12px;
+  color: rgba(255,255,255,0.7);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.cinema-transcript-status.active {
+  display: flex;
+}
+
+.cinema-transcript-status::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--t-live, #e05252);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+/* Fullscreen: transcript overlay */
+.discover-video-hero:fullscreen .cinema-transcript,
+.discover-video-hero:-webkit-full-screen .cinema-transcript {
+  bottom: 80px;
+}
+
+.discover-video-hero:fullscreen .cinema-transcript-status,
+.discover-video-hero:-webkit-full-screen .cinema-transcript-status {
+  top: 70px;
+}
+
+.cinema-progress-wrap {
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 2px;
+  position: relative;
+  cursor: pointer;
+  transition: height 0.15s ease;
+}
+
+.cinema-progress-wrap:hover {
+  height: 6px;
+}
+
+.cinema-progress-bar {
+  height: 100%;
+  background: var(--t-live, #e05252);
+  border-radius: 2px;
+  width: 0%;
+  pointer-events: none;
+  transition: width 0.3s linear;
+}
+
+.cinema-progress-handle {
+  position: absolute;
+  top: 50%;
+  left: 0%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.15s ease;
+  pointer-events: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+
+.cinema-progress-wrap:hover .cinema-progress-handle {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.cinema-time {
+  font-size: 12px;
+  color: rgba(255,255,255,0.7);
+  font-family: var(--t-font-body, sans-serif);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  min-width: 90px;
+  text-align: right;
+}
+
+/* ─── Language Selector (cinema) ─── */
+.cinema-lang-selector {
+  display: none;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 22px;
+  padding: 3px;
+  margin-right: 6px;
+}
+
+.cinema-lang-selector.visible {
+  display: flex;
+}
+
+.cinema-lang-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.5);
+  font-family: var(--t-font-body, sans-serif);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 6px 10px;
+  border-radius: 18px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.cinema-lang-btn:hover {
+  color: rgba(255,255,255,0.8);
+}
+
+.cinema-lang-btn.active {
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+}
+
+/* Waiting indicator when other language is speaking */
+.cinema-transcript-waiting {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.cinema-transcript-waiting.visible {
+  display: flex;
+}
+
+.cinema-transcript-waiting .dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.4);
+  animation: dotPulse 1.4s ease-in-out infinite;
+}
+
+.cinema-transcript-waiting .dot:nth-child(2) { animation-delay: 0.2s; }
+.cinema-transcript-waiting .dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dotPulse {
+  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1.2); }
+}
+
+/* Old cinema close btn — replaced by cinema-controls */
+.cinema-close-btn { display: none; }
+
+/* ─── Discover Header (Apple TV — floats over hero) ─── */
+.discover-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  padding: 14px 24px;
+  background: transparent;
+  flex-shrink: 0;
+  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+}
+
+/* ─── Header Pill (Search + Clock + Avatar — no separators) ─── */
+.header-pill {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  background: rgba(255,255,255,0.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 20px;
+  padding: 0 4px;
+  gap: 2px;
+  transition: background 0.3s ease;
+}
+
+.header-pill-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.8);
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  padding: 0;
+  transition: color 0.2s ease;
+}
+
+.header-pill-btn:hover {
+  color: #fff;
+}
+
+.header-clock {
+  font-family: var(--t-font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  padding: 0 6px;
+  flex-shrink: 0;
+}
+
+/* Search input — hidden by default, expands left */
+.header-search-input {
+  width: 0;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-family: var(--t-font-body);
+  font-size: 14px;
+  padding: 0;
+  outline: none;
+  opacity: 0;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, padding 0.3s ease;
+}
+
+.header-search-input::placeholder {
+  color: rgba(255,255,255,0.4);
+}
+
+.header-pill.expanded {
+  background: rgba(255,255,255,0.18);
+}
+
+.header-pill.expanded .header-search-input {
+  width: 180px;
+  padding: 0 0 0 12px;
+  opacity: 1;
+}
+
+/* ─── Video Hero (fixed behind content) ─── */
+.discover-video-hero {
+  width: 100%;
+  height: 100vh;
+  background: #000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  overflow: hidden;
+  will-change: transform, filter;
+  transition: filter 0.3s ease;
+}
+
+/* ─── Hero Video Slider ─── */
+.hero-video-slider {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  visibility: hidden;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.hero-video-slider .hero-video.hero-video--active {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.hero-video iframe,
+.hero-video video {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 177.78vh; /* 16:9 aspect ratio cover */
+  height: 100vh;
+  min-width: 100%;
+  min-height: 100%;
+  transform: translate(-50%, -50%);
+  object-fit: cover;
+  border: none;
+}
+
+/* 9-step gradient overlay */
+.hero-gradient-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 50%;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.0)   0%,
+    rgba(0,0,0,0.02)  15%,
+    rgba(0,0,0,0.06)  30%,
+    rgba(0,0,0,0.14)  45%,
+    rgba(0,0,0,0.28)  55%,
+    rgba(0,0,0,0.45)  65%,
+    rgba(0,0,0,0.62)  75%,
+    rgba(0,0,0,0.82)  85%,
+    rgba(0,0,0,0.95)  100%
+  );
+}
+
+/* ─── Unmute Button ─── */
+.hero-unmute-btn {
+  position: absolute;
+  bottom: 50%;
+  left: 50%;
+  transform: translate(-50%, 50%);
+  z-index: 5;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.85);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.hero-unmute-btn:hover {
+  background: rgba(0,0,0,0.6);
+  transform: translate(-50%, 50%) scale(1.1);
+}
+
+.hero-unmute-btn.unmuted .mute-x1,
+.hero-unmute-btn.unmuted .mute-x2 {
+  display: none;
+}
+
+/* ─── Active Mini Card (synced with hero) ─── */
+.hero-synced-active {
+  transform: scale(1.08) !important;
+  box-shadow: 0 0 6px 1px var(--card-color, rgba(139,92,246,0.3)), 0 2px 10px rgba(0,0,0,0.25) !important;
+  z-index: 20 !important;
+}
+
+.video-play-btn {
+  display: none; /* replaced by unmute btn */
+  opacity: 0.85;
+}
+
+.video-play-btn:hover {
+  transform: scale(1.08);
+  opacity: 1;
+}
+
+.video-live-badge {
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 65;
+  background: var(--t-live);
+  color: #fff;
+  font-family: var(--t-font-body);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 3px 10px;
+  border-radius: 4px;
+}
+
+/* ─── Discover Content (Apple TV Glass Shelf) ─── */
+.discover-content {
+  position: relative;
+  z-index: 10;
+  padding-bottom: 0;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  overflow: visible;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+}
+
+/* Glass background as pseudo — doesn't clip content */
+.discover-content::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(28,28,30,0.45);
+  backdrop-filter: blur(50px) saturate(200%);
+  -webkit-backdrop-filter: blur(50px) saturate(200%);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 50px;
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Hero spacer — offsets content below fixed hero */
+.hero-spacer {
+  height: calc(100vh + 50px);
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+/* Card 1 = Now Streaming (tight fit, centered) */
+.content-card-1 {
+  /* 6×200 + 5×30 + 2×25 = 1400 */
+  width: 1400px;
+  max-width: calc(100% - 60px);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.content-card-1 .discover-section {
+  padding: 30px 25px;
+}
+
+@media (max-width: 767px) {
+  .content-card-1 {
+    width: calc(100% - 40px);
+    max-width: none;
+    overflow: hidden;
+    border-radius: 50px;
+  }
+  .content-card-1 .discover-section {
+    padding: 10px 15px;
+  }
+}
+
+/* ─── Fan Carousel (Mobile: stacked fan, Desktop: row) ─── */
+.fan-carousel {
+  position: relative;
+  width: 100%;
+  height: 127px;
+  overflow: visible;
+}
+
+.fan-carousel .stream-card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity, z-index;
+}
+
+.fan-carousel .stream-card .stream-card-bg {
+  transition: filter 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Center = front — sharp thumbnail */
+.fan-carousel .stream-card[data-fan-pos="center"] {
+  transform: translate(-50%, -50%) scale(1.06);
+  z-index: 10;
+  opacity: 1;
+}
+.fan-carousel .stream-card[data-fan-pos="center"] .stream-card-bg {
+  filter: none;
+}
+
+/* Left = behind, peeking left — blurred thumbnail */
+.fan-carousel .stream-card[data-fan-pos="left"] {
+  transform: translate(-95%, -50%) scale(0.9);
+  z-index: 5;
+  opacity: 0.9;
+}
+.fan-carousel .stream-card[data-fan-pos="left"] .stream-card-bg {
+  filter: blur(4px);
+}
+
+/* Right = behind, peeking right — blurred thumbnail */
+.fan-carousel .stream-card[data-fan-pos="right"] {
+  transform: translate(-5%, -50%) scale(0.9);
+  z-index: 5;
+  opacity: 0.9;
+}
+.fan-carousel .stream-card[data-fan-pos="right"] .stream-card-bg {
+  filter: blur(4px);
+}
+
+/* Further out — ready to slide in */
+.fan-carousel .stream-card[data-fan-pos="hidden-left"] {
+  transform: translate(-160%, -50%) scale(0.85);
+  z-index: 1;
+  opacity: 0;
+}
+
+.fan-carousel .stream-card[data-fan-pos="hidden-right"] {
+  transform: translate(60%, -50%) scale(0.85);
+  z-index: 1;
+  opacity: 0;
+}
+
+.fan-carousel .stream-card[data-fan-pos="hidden"] {
+  transform: translate(-50%, -50%) scale(0.8);
+  z-index: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ─── Desktop: revert to horizontal row ─── */
+@media (min-width: 768px) {
+  .fan-carousel {
+    display: flex;
+    gap: 30px;
+    position: static;
+    height: auto;
+    overflow: visible;
+    padding: 0;
+    margin: 0;
+  }
+
+  .fan-carousel .stream-card {
+    position: static;
+    transform: none;
+    opacity: 1;
+    z-index: auto;
+  }
+
+  .fan-carousel::after {
+    display: none;
+  }
+}
+
+/* Card 2 = black bg with top fade to transparent */
+.content-card-2 {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-top: 0;
+  padding: 0;
+  background: linear-gradient(to top,
+    #000 0%,
+    #000 60%,
+    rgba(0,0,0,0.95) 75%,
+    rgba(0,0,0,0.7) 85%,
+    rgba(0,0,0,0.3) 93%,
+    transparent 100%
+  );
+}
+
+.discover-content.content-card-2::before {
+  display: none !important;
+}
+
+@media (min-width: 768px) {
+  .discover-content {
+    width: calc(100% - 60px);
+    max-width: calc(100% - 60px);
+  }
+  .discover-content.content-card-1 {
+    width: 1400px;
+    max-width: calc(100% - 60px);
+    margin-top: -270px;
+  }
+}
+
+/* ─── Discover Sections ─── */
+.discover-section {
+  padding: 30px 0;
+}
+
+.content-card-2 .discover-section {
+  padding: 30px 0;
+}
+
+.discover-section-title {
+  font-family: var(--t-font-body);
+  font-size: 18px;
+  font-weight: 700;
+  padding-left: 50px;
+  color: #f2f2f2;
+  margin-bottom: 12px;
+  position: relative;
+  z-index: 25;
+}
+
+/* ─── Stream Carousel ─── */
+.stream-carousel {
+  display: flex;
+  gap: 30px;
+  overflow-x: auto;
+  overflow-y: visible;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  padding: 20px 0 60px 0;
+  margin: -20px 0 -60px 0;
+  scrollbar-width: none;
+}
+
+/* Spacer for scroll start position in Card 2 */
+.scroll-spacer {
+  flex-shrink: 0 !important;
+  width: 35px !important;
+  min-width: 35px !important;
+  min-height: 1px;
+  display: block;
+}
+
+.stream-carousel::after {
+  content: '';
+  flex-shrink: 0;
+  width: 1px;
+}
+
+.stream-carousel::-webkit-scrollbar { display: none; }
+
+/* ─── Stream Card (base) ─── */
+.stream-card {
+  scroll-snap-align: none;
+  border-radius: 25px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease;
+}
+
+/* Small: Recommended cards in Card 2 */
+.card-sm {
+  width: 200px;
+  height: 285px;
+}
+
+.content-card-1 .card-sm {
+  width: 200px;
+  height: 114px;
+}
+
+/* Medium: Live in This Week cards in Card 2 */
+.card-md {
+  width: 200px;
+  height: 285px;
+}
+
+.stream-card:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+  z-index: 20;
+}
+
+.content-card-2 .stream-card:hover {
+  box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+}
+
+/* Thumbnail background */
+.stream-card-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transform: scale(1.05);
+  transition: filter 0.3s ease;
+}
+
+/* Card 2 thumbnails: blurred by default, clear on hover/tap */
+.content-card-2 .stream-card .stream-card-bg {
+  filter: blur(1px);
+}
+.content-card-2 .stream-card:hover .stream-card-bg,
+.content-card-2 .stream-card:active .stream-card-bg {
+  filter: blur(0);
+}
+
+/* Color overlay: blurred, 0.75 opacity */
+.stream-card-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px;
+  text-align: center;
+}
+
+.stream-card-overlay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--card-color, rgba(100,100,200,0.8));
+  opacity: 0.75;
+  border-radius: inherit;
+  z-index: 0;
+}
+
+.stream-card-title {
+  position: relative;
+  z-index: 1;
+  font-family: var(--t-font-body);
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.3;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.stream-card-meta {
+  position: relative;
+  z-index: 1;
+  font-family: var(--t-font-body);
+  font-size: 11px;
+  color: rgba(255,255,255,0.7);
+  line-height: 1.2;
+}
+
+/* Smaller text for compact cards (Card 1) */
+.card-sm .stream-card-title { font-size: 12px; }
+.card-sm .stream-card-meta { font-size: 9px; }
+
+/* Larger text for medium cards (Card 1) */
+.card-md .stream-card-title { font-size: 15px; }
+.card-md .stream-card-meta { font-size: 12px; }
+
+/* ─── Card 2: Text at bottom with gradient blur ─── */
+.content-card-2 .stream-card-overlay {
+  justify-content: flex-end;
+  align-items: center;
+  padding: 0 14px 20px;
+  gap: 2px;
+  text-align: center;
+}
+
+/* Remove color overlay in Card 2 — use gradient blur instead */
+.content-card-2 .stream-card-overlay::before {
+  display: none;
+}
+
+/* Gradient blur at bottom of Card 2 cards */
+.content-card-2 .stream-card-overlay::after {
+  content: '';
+  position: absolute;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  height: 65%;
+  background: linear-gradient(to top,
+    rgba(0,0,0,0.85) 0%,
+    rgba(0,0,0,0.7) 15%,
+    rgba(0,0,0,0.45) 35%,
+    rgba(0,0,0,0.2) 55%,
+    rgba(0,0,0,0.08) 75%,
+    transparent 100%
+  );
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  mask-image: linear-gradient(to top,
+    black 0%,
+    rgba(0,0,0,0.9) 20%,
+    rgba(0,0,0,0.6) 45%,
+    rgba(0,0,0,0.3) 65%,
+    rgba(0,0,0,0.1) 80%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(to top,
+    black 0%,
+    rgba(0,0,0,0.9) 20%,
+    rgba(0,0,0,0.6) 45%,
+    rgba(0,0,0,0.3) 65%,
+    rgba(0,0,0,0.1) 80%,
+    transparent 100%
+  );
+  border-radius: inherit;
+  z-index: 0;
+}
+
+/* Card 2 text sizes — 40% larger */
+.content-card-2 .stream-card-title {
+  font-size: 18px;
+  font-weight: 700;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.5);
+}
+
+.content-card-2 .stream-card-meta {
+  font-size: 13px;
+  color: rgba(255,255,255,0.8);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+
+/* ─── Card Grid (for "Live in This Week") ─── */
+.card-grid {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 30px;
+  overflow-x: auto;
+  overflow-y: visible;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  padding: 20px 0 60px 0;
+  margin: -20px 0 -60px 0;
+}
+.card-grid::-webkit-scrollbar { display: none; }
+@media (min-width: 768px) {
+  .scroll-spacer {
+    width: 40px;
+    min-width: 40px;
+  }
+  .discover-section-title {
+    padding-left: 55px;
+  }
+}
+.card-grid::after {
+  content: '';
+  flex-shrink: 0;
+  width: 1px;
+}
+
+/* ─── Bottom Tab Bar (Pill) ─── */
+.tab-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: auto;
+  max-width: 420px;
+  height: 56px;
+  padding: 0 24px;
+  gap: 8px;
+  background: rgba(28,28,30,0.75);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 999px;
+  flex-shrink: 0;
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+
+.tab-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 16px;
+  color: rgba(255,255,255,0.4);
+  transition: color var(--t-duration) var(--t-ease);
+  font-family: var(--t-font-body);
+}
+
+.tab-item span {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.tab-item.active {
+  color: var(--t-yellow);
+}
+
+.tab-item:hover:not(.active) {
+  color: rgba(255,255,255,0.65);
+}
+
+/* ─── Broadcaster ─── */
+.broadcast-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-top: 1px solid var(--t-border);
+}
+
+.broadcast-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--t-border);
+  flex-shrink: 0;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-label {
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--t-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.status-pip {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--t-text-muted);
+  transition: all 0.3s;
+}
+
+.status-pip.active {
+  background: var(--t-live);
+  box-shadow: 0 0 8px var(--t-live);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.status-pip.processing {
+  background: var(--t-yellow);
+}
+
+.mic-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: var(--t-radius-sm);
+  border: 1px solid var(--t-border);
+  background: transparent;
+  color: var(--t-text-mid);
+  font-family: var(--t-font-body);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all var(--t-duration) var(--t-ease);
+}
+
+.mic-toggle:hover {
+  border-color: var(--t-live);
+  color: var(--t-live);
+}
+
+.mic-toggle.active {
+  background: var(--t-live);
+  border-color: var(--t-live);
+  color: #fff;
+}
+
+.transcript-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  scroll-behavior: smooth;
+}
+
+.t-line {
+  font-family: var(--t-font-display);
+  line-height: 1.65;
+  margin-bottom: 0.5em;
+  animation: slideUp 0.35s ease;
+}
+
+.t-current { color: var(--t-text); font-size: 1.2rem; }
+.t-recent  { color: var(--t-text-mid); font-size: 1.1rem; }
+.t-old     { color: var(--t-text-muted); font-size: 1rem; }
+
+.t-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: var(--t-yellow);
+  vertical-align: middle;
+  margin-left: 3px;
+  animation: blink 1s step-end infinite;
+}
+
+/* ─── Viewer ─── */
+.viewer-body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 28px 24px 24px;
+  scroll-behavior: smooth;
+}
+
+.viewer-body::-webkit-scrollbar { display: none; }
+
+.viewer-body .t-current { font-size: clamp(1.8rem, 5vw, 3rem); }
+.viewer-body .t-recent  { font-size: clamp(1.2rem, 3.5vw, 2rem); }
+.viewer-body .t-old     { font-size: clamp(0.95rem, 2.5vw, 1.5rem); }
+
+.viewer-waiting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: var(--t-text-muted);
+  gap: 14px;
+}
+
+.viewer-waiting .icon {
+  font-size: 3rem;
+  opacity: 0.18;
+}
+
+.viewer-waiting p {
+  font-size: 0.85rem;
+  text-align: center;
+  line-height: 1.7;
+  max-width: 220px;
+}
+
+.viewer-footer {
+  flex-shrink: 0;
+  padding: 10px 18px;
+  border-top: 1px solid var(--t-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--t-surface);
+}
+
+.font-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.font-btn {
+  background: var(--t-surface2);
+  border: 1px solid var(--t-border);
+  color: var(--t-text-mid);
+  border-radius: 5px;
+  width: 32px;
+  height: 32px;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  font-family: var(--t-font-body);
+}
+
+.font-btn:hover {
+  border-color: var(--t-yellow);
+  color: var(--t-yellow);
+}
+
+.wake-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.68rem;
+  color: var(--t-text-muted);
+  background: none;
+  border: 1px solid var(--t-border);
+  border-radius: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-family: var(--t-font-body);
+  transition: all var(--t-duration) var(--t-ease);
+  letter-spacing: 0.06em;
+}
+
+.wake-btn.active {
+  color: var(--t-green);
+  border-color: rgba(82,192,122,0.35);
+}
+
+/* ─── Video Panel ─── */
+.video-panel {
+  background: #000;
+  flex-shrink: 0;
+  height: 46vh;
+  position: relative;
+  transition: height 0.45s var(--t-ease);
+  overflow: hidden;
+}
+
+.video-panel.collapsed { height: 0; }
+.video-panel iframe { width: 100%; height: 100%; border: none; }
+
+/* ─── QR Overlay ─── */
+.qr-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.88);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.qr-overlay.open { display: flex; }
+
+.qr-card {
+  background: var(--t-surface);
+  border: 1px solid var(--t-border);
+  border-radius: var(--t-radius-lg);
+  padding: 32px 28px;
+  max-width: 340px;
+  width: 100%;
+  text-align: center;
+}
+
+.qr-card h3 {
+  font-family: var(--t-font-display);
+  font-size: 1.2rem;
+  margin-bottom: 6px;
+}
+
+.qr-card p {
+  font-size: 0.78rem;
+  color: var(--t-text-muted);
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
