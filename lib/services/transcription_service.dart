@@ -1,295 +1,474 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:http_parser/http_parser.dart';
-import 'dart:convert';
 import '../config/constants.dart';
-import 'youtube_service.dart';
 
-/// Core transcription service — downloads audio from YouTube stream and sends to Groq Whisper.
-/// Works on iOS without any special permissions (no mic, no screen capture needed).
+/// Transcription modes
+enum TranscriptionMode {
+  vod,      // Pre-recorded video — pre-buffer for sync playback
+  liveRemote, // Watching live stream from home
+  liveInHall, // Sitting in the hall — text only, no video
+}
+
+/// Server-side transcription service.
+/// All audio processing happens on Vercel — no YouTube audio on the client.
 ///
-/// Architecture:
-/// 1. youtube_explode_dart gets the audio-only stream URL from YouTube
-/// 2. We download small chunks (~4 seconds) of audio data via HTTP range requests
-/// 3. Each chunk is sent to our Vercel proxy which forwards to Groq Whisper
-/// 4. Whisper returns text + detected language
-/// 5. We filter by target language and display matching text
+/// VOD:   Client sends videoId + timestamp → Server extracts audio → Whisper → translate → text
+/// Live:  Client polls → Server gets latest HLS segment → Whisper → translate → text
 class TranscriptionService extends ChangeNotifier {
-  final YouTubeService _ytService = YouTubeService();
-
   // State
   bool _isActive = false;
   String _targetLang = AppConstants.defaultLanguage;
   String? _currentVideoId;
-  String? _audioStreamUrl;
-  Timer? _chunkTimer;
+  TranscriptionMode _mode = TranscriptionMode.vod;
+  Timer? _pollTimer;
   bool _isProcessing = false;
-  int _skipCount = 0;
-  int _bytesDownloaded = 0;
 
-  // Retry / resilience
-  int _consecutiveErrors = 0;
-  DateTime? _streamFetchedAt;
-  static const _maxRetries = 3;
-  static const _streamExpiryDuration = Duration(hours: 5, minutes: 30);
+  // VOD pre-buffer
+  double _currentPlaybackSec = 0.0;
+  double _preBufferAheadSec = 8.0; // How far ahead to transcribe
+  double _lastTranscribedSec = 0.0;
+  final Map<double, _TranscriptChunk> _vodBuffer = {};
 
-  // Transcript lines
-  final List<String> _lines = [];
+  // YouTube captions (hybrid mode)
+  bool _captionsLoaded = false;
+  bool _captionsFailed = false;
+  List<_CaptionSegment> _captionSegments = [];
+  int _lastCaptionIndex = 0;
+
+  // Transcript lines (displayed)
+  final List<TranscriptLine> _lines = [];
   String _statusText = '';
+  int _consecutiveErrors = 0;
 
   // Getters
   bool get isActive => _isActive;
   String get targetLang => _targetLang;
-  List<String> get lines => List.unmodifiable(_lines);
+  TranscriptionMode get mode => _mode;
+  List<TranscriptLine> get lines => List.unmodifiable(_lines);
   String get statusText => _statusText;
 
-  /// Language normalization map (same as web version)
-  static const _langMap = {
-    'de': 'de', 'german': 'de', 'deutsch': 'de',
-    'en': 'en', 'english': 'en',
-    'zu': 'zu', 'zulu': 'zu',
-    'af': 'zu', // Afrikaans sometimes detected for Zulu
-    'xh': 'zu', // Xhosa close to Zulu
-    'st': 'zu', // Sotho group
+  /// Available languages
+  static const availableLanguages = ['de', 'en', 'ru', 'zu', 'ro'];
+
+  static const _langLabels = {
+    'de': 'Deutsch',
+    'en': 'English',
+    'ru': 'Русский',
+    'zu': 'isiZulu',
+    'ro': 'Română',
   };
 
-  String _normalizeLang(String? detected) {
-    if (detected == null) return 'unknown';
-    final d = detected.toLowerCase().trim();
-    return _langMap[d] ?? d;
-  }
+  static String langLabel(String code) => _langLabels[code] ?? code.toUpperCase();
 
-  /// Set target language filter
+  /// Set target language — reloads captions if in caption mode
   void setLanguage(String lang) {
+    if (_targetLang == lang) return;
     _targetLang = lang;
     _lines.clear();
-    _skipCount = 0;
-    _statusText = 'Transcribing (${lang.toUpperCase()})...';
+    _statusText = 'Sprache wechseln (${langLabel(lang)})...';
     notifyListeners();
+
+    // Reload captions in new language if we were using captions
+    if (_captionsLoaded && _currentVideoId != null) {
+      _captionsLoaded = false;
+      _captionSegments = [];
+      _lastCaptionIndex = 0;
+      _pollTimer?.cancel();
+      _loadYouTubeCaptions(_currentVideoId!);
+    }
   }
 
-  /// Start transcription for a video
-  Future<void> start(String videoId) async {
-    if (_isActive && _currentVideoId == videoId) return;
-
-    // Stop any existing transcription
+  /// Start VOD transcription — uses YouTube's native CC (shown in embed player)
+  void startVod(String videoId) {
+    if (_isActive && _currentVideoId == videoId && _mode == TranscriptionMode.vod) return;
     stop();
 
     _currentVideoId = videoId;
+    _mode = TranscriptionMode.vod;
     _isActive = true;
     _lines.clear();
-    _skipCount = 0;
-    _bytesDownloaded = 0;
+    _vodBuffer.clear();
+    _captionsLoaded = false;
+    _captionsFailed = false;
+    _captionSegments = [];
+    _lastCaptionIndex = 0;
+    _lastTranscribedSec = _currentPlaybackSec;
     _consecutiveErrors = 0;
-    _statusText = 'Verbinde mit Audio-Stream...';
+    // YouTube's native CC is enabled via the embed player
+    // No server-side fetching needed — captions render directly in the iframe
+    _statusText = 'YouTube Untertitel aktiviert';
+    _captionsLoaded = true;  // Signal that we're using native CC
+    notifyListeners();
+  }
+
+  /// Start live transcription (remote viewer or in-hall)
+  void startLive(String videoId, {TranscriptionMode mode = TranscriptionMode.liveRemote}) {
+    if (_isActive && _currentVideoId == videoId && _mode == mode) return;
+    stop();
+
+    _currentVideoId = videoId;
+    _mode = mode;
+    _isActive = true;
+    _lines.clear();
+    _consecutiveErrors = 0;
+    _statusText = 'Verbinde mit Live-Stream...';
     notifyListeners();
 
-    try {
-      await _refreshAudioStream();
+    // Poll for new segments
+    _fetchLiveChunk();
+    _pollTimer = Timer.periodic(
+      const Duration(milliseconds: 3500),
+      (_) => _fetchLiveChunk(),
+    );
+  }
 
-      if (_audioStreamUrl == null) {
-        _statusText = 'Kein Audio-Stream verfuegbar';
-        notifyListeners();
-        return;
-      }
+  /// Update playback position (called by the player)
+  void updatePlaybackPosition(double seconds) {
+    _currentPlaybackSec = seconds;
 
-      _statusText = 'Transcribing...';
-      notifyListeners();
-
-      // Start periodic chunk downloads
-      _downloadAndTranscribe(); // First chunk immediately
-      _chunkTimer = Timer.periodic(
-        const Duration(milliseconds: AppConstants.transcriptionIntervalMs),
-        (_) => _downloadAndTranscribe(),
-      );
-    } catch (e) {
-      _statusText = 'Fehler: $e';
-      _isActive = false;
-      notifyListeners();
+    // Display captions or buffered Whisper text
+    if (_captionsLoaded) {
+      _displayCaptions();
+    } else {
+      _displayBufferedText();
     }
   }
 
   /// Stop transcription
   void stop() {
-    _chunkTimer?.cancel();
-    _chunkTimer = null;
+    _pollTimer?.cancel();
+    _pollTimer = null;
     _isActive = false;
     _isProcessing = false;
-    _audioStreamUrl = null;
     _currentVideoId = null;
     _consecutiveErrors = 0;
     _statusText = '';
+    _vodBuffer.clear();
     notifyListeners();
   }
 
-  /// Refresh the audio stream URL (YouTube URLs expire after ~6 hours)
-  Future<void> _refreshAudioStream() async {
-    if (_currentVideoId == null) return;
-    _audioStreamUrl = await _ytService.getAudioStreamUrl(_currentVideoId!);
-    _streamFetchedAt = DateTime.now();
-    _bytesDownloaded = 0;
+  // ═══════════════════════════════════════════════════════
+  //  YouTube Captions (Hybrid Mode)
+  // ═══════════════════════════════════════════════════════
+
+  /// Load YouTube auto-captions for the entire video. If unavailable, fall back to Whisper.
+  Future<void> _loadYouTubeCaptions(String videoId) async {
+    try {
+      debugPrint('[Captions] Loading captions for $videoId lang=$_targetLang ...');
+      _statusText = 'Lade YouTube Untertitel...';
+      notifyListeners();
+
+      // Route through Vercel serverless (avoids mixed content HTTPS→HTTP)
+      final uri = Uri.parse('${AppConstants.baseUrl}/api/transcribe-captions');
+      debugPrint('[Captions] POST $uri');
+
+      final response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'videoId': videoId,
+          'lang': _targetLang,
+          'targetLang': _targetLang,
+        }),
+      ).timeout(const Duration(seconds: 30));
+
+      // Check if service was stopped while we were waiting
+      if (!_isActive || _currentVideoId != videoId) {
+        debugPrint('[Captions] Service stopped or video changed during fetch, aborting');
+        return;
+      }
+
+      debugPrint('[Captions] Response: ${response.statusCode} (${response.body.length} bytes)');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final source = data['source'] as String? ?? '';
+        final segments = (data['segments'] as List<dynamic>?) ?? [];
+
+        debugPrint('[Captions] source=$source segments=${segments.length}');
+
+        if (segments.isEmpty) {
+          debugPrint('[Captions] No segments returned, fallback to Whisper');
+          _statusText = 'Keine Untertitel verfügbar';
+          notifyListeners();
+          _fallbackToWhisper();
+          return;
+        }
+
+        _captionSegments = segments.map((s) {
+          final startSec = (s['startSec'] as num?)?.toDouble() ?? 0.0;
+          final endSec = (s['endSec'] as num?)?.toDouble() ?? (startSec + 3.0);
+          final text = (s['text'] as String?) ?? '';
+          return _CaptionSegment(
+            startSec: startSec,
+            endSec: endSec,
+            text: text,
+          );
+        }).where((s) => s.text.isNotEmpty).toList();
+
+        if (_captionSegments.isEmpty) {
+          debugPrint('[Captions] All segments empty after filtering');
+          _fallbackToWhisper();
+          return;
+        }
+
+        _captionsLoaded = true;
+        _lastCaptionIndex = 0;
+        _statusText = 'Untertitel geladen (${_captionSegments.length} Segmente)';
+        notifyListeners();
+
+        // Start polling to display captions in sync with playback
+        _pollTimer?.cancel();
+        _pollTimer = Timer.periodic(
+          const Duration(milliseconds: 500),
+          (_) => _displayCaptions(),
+        );
+
+        debugPrint('[Captions] ✓ Loaded ${_captionSegments.length} segments for $videoId');
+      } else {
+        final bodySnip = response.body.length > 150 ? response.body.substring(0, 150) : response.body;
+        debugPrint('[Captions] HTTP ${response.statusCode}: $bodySnip');
+        // Show details so user can report
+        try {
+          final errData = jsonDecode(response.body);
+          final detail = errData['detail'] ?? errData['error'] ?? '';
+          _statusText = 'Fehler ${response.statusCode}: $detail'.substring(0, 80);
+        } catch (_) {
+          _statusText = 'Untertitel-Fehler (${response.statusCode})';
+        }
+        notifyListeners();
+        _fallbackToWhisper();
+      }
+    } catch (e) {
+      debugPrint('[Captions] Exception: $e');
+      _statusText = 'Untertitel-Fehler: ${e.toString().substring(0, e.toString().length.clamp(0, 80))}';
+      notifyListeners();
+      _fallbackToWhisper();
+    }
   }
 
-  /// Check if the stream URL is likely expired
-  bool get _isStreamExpired {
-    if (_streamFetchedAt == null) return true;
-    return DateTime.now().difference(_streamFetchedAt!) > _streamExpiryDuration;
+  /// Fall back to Whisper-based transcription
+  void _fallbackToWhisper() {
+    _captionsFailed = true;
+    // Keep diagnostic error message visible if already set
+    if (!_statusText.contains('Fehler')) {
+      _statusText = 'Kein Untertitel — Whisper Fallback';
+    }
+    notifyListeners();
+
+    // Start Whisper pre-buffering
+    _preBufferVod();
+    _pollTimer = Timer.periodic(
+      const Duration(milliseconds: 3000),
+      (_) => _preBufferVod(),
+    );
   }
 
-  /// Exponential backoff delay for retries
-  Duration _backoffDelay(int attempt) {
-    // 1s, 2s, 4s
-    return Duration(seconds: 1 << attempt.clamp(0, 3));
+  /// Display YouTube captions synchronized with playback position
+  void _displayCaptions() {
+    if (!_isActive || !_captionsLoaded || _captionSegments.isEmpty) return;
+
+    bool changed = false;
+
+    // Find segments that should be displayed at current playback position
+    for (int i = _lastCaptionIndex; i < _captionSegments.length; i++) {
+      final seg = _captionSegments[i];
+
+      if (seg.startSec > _currentPlaybackSec + 1.0) break; // Not yet
+      if (seg.endSec < _currentPlaybackSec - 2.0) {
+        _lastCaptionIndex = i + 1;
+        continue; // Already past
+      }
+
+      // This segment should be displayed now
+      if (!seg.displayed && _currentPlaybackSec >= seg.startSec - 0.5) {
+        seg.displayed = true;
+        _lines.add(TranscriptLine(
+          text: seg.text,
+          detectedLang: _targetLang,
+          timestamp: seg.startSec,
+        ));
+
+        while (_lines.length > AppConstants.maxTranscriptLines) {
+          _lines.removeAt(0);
+        }
+        changed = true;
+        _statusText = '';
+      }
+    }
+
+    if (changed) notifyListeners();
   }
 
-  /// Download a chunk of audio and send to Whisper with retry logic
-  Future<void> _downloadAndTranscribe() async {
-    if (!_isActive || _isProcessing || _audioStreamUrl == null) return;
+  // ═══════════════════════════════════════════════════════
+  //  VOD Pre-Buffer (Whisper fallback)
+  // ═══════════════════════════════════════════════════════
+
+  Future<void> _preBufferVod() async {
+    if (!_isActive || _isProcessing || _currentVideoId == null) return;
+    if (_mode != TranscriptionMode.vod) return;
+
+    // Don't buffer too far ahead
+    final targetSec = _currentPlaybackSec + _preBufferAheadSec;
+    if (_lastTranscribedSec >= targetSec) return;
+
     _isProcessing = true;
 
     try {
-      // Proactively refresh if stream is about to expire
-      if (_isStreamExpired) {
-        debugPrint('[Transcribe] Stream expired, refreshing...');
-        _statusText = 'Stream wird erneuert...';
-        notifyListeners();
-        await _refreshAudioStream();
-        if (_audioStreamUrl == null) {
-          _statusText = 'Stream-Erneuerung fehlgeschlagen';
-          _isProcessing = false;
-          notifyListeners();
-          return;
-        }
-      }
+      final startSec = _lastTranscribedSec;
+      const chunkDuration = 4.0;
 
-      // Download ~4 seconds of audio data via range request
-      final chunkSize = 64 * 1024; // 64KB
-      final rangeStart = _bytesDownloaded;
-      final rangeEnd = rangeStart + chunkSize - 1;
+      final response = await http.post(
+        Uri.parse('${AppConstants.baseUrl}/api/transcribe-vod'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'videoId': _currentVideoId,
+          'startSec': startSec,
+          'chunkDuration': chunkDuration,
+          'targetLang': _targetLang,
+        }),
+      ).timeout(const Duration(seconds: 20));
 
-      final audioRes = await _httpGetWithRetry(
-        Uri.parse(_audioStreamUrl!),
-        headers: {'Range': 'bytes=$rangeStart-$rangeEnd'},
-      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final text = (data['translatedText'] as String?)?.trim() ??
+            (data['text'] as String?)?.trim() ?? '';
+        final detectedLang = data['detectedLang'] as String? ?? 'unknown';
 
-      if (audioRes == null) {
-        // All retries failed — try refreshing the stream URL
-        debugPrint('[Transcribe] Download failed, refreshing stream URL...');
-        await _refreshAudioStream();
-        _isProcessing = false;
-        return;
-      }
-
-      if (audioRes.statusCode != 200 && audioRes.statusCode != 206) {
-        // Stream might have expired, try to refresh
-        debugPrint('[Transcribe] HTTP ${audioRes.statusCode}, refreshing stream...');
-        await _refreshAudioStream();
-        _isProcessing = false;
-        return;
-      }
-
-      final audioData = audioRes.bodyBytes;
-      _bytesDownloaded += audioData.length;
-      _consecutiveErrors = 0; // Reset on success
-
-      if (audioData.isEmpty) {
-        _isProcessing = false;
-        return;
-      }
-
-      // Send raw audio to Groq Whisper via our Vercel proxy
-      final container = _ytService.lastAudioStreamContainer;
-      final mimeType = _ytService.lastAudioStreamMimeType;
-
-      final request = http.MultipartRequest('POST', Uri.parse(AppConstants.transcribeUrl));
-      request.files.add(http.MultipartFile.fromBytes(
-        'file',
-        audioData,
-        filename: 'audio.$container',
-        contentType: _parseMediaType(mimeType),
-      ));
-      request.fields['model'] = 'whisper-large-v3-turbo';
-      request.fields['response_format'] = 'verbose_json';
-
-      final streamedRes = await request.send().timeout(const Duration(seconds: 10));
-      final resBody = await streamedRes.stream.bytesToString();
-
-      if (streamedRes.statusCode != 200) {
-        debugPrint('[Transcribe] API Error: $resBody');
-        _isProcessing = false;
-        return;
-      }
-
-      final data = jsonDecode(resBody);
-      final text = (data['text'] as String?)?.trim() ?? '';
-      final detectedLang = _normalizeLang(data['language'] as String?);
-
-      debugPrint('[Transcribe] detected=$detectedLang target=$_targetLang text="${text.length > 50 ? text.substring(0, 50) : text}"');
-
-      // Language filter
-      if (detectedLang == _targetLang) {
-        _skipCount = 0;
         if (text.length > 2) {
-          _lines.add(text);
-          if (_lines.length > AppConstants.maxTranscriptLines) {
-            _lines.removeAt(0);
-          }
-          _statusText = 'Transcribing...';
-          notifyListeners();
+          _vodBuffer[startSec] = _TranscriptChunk(
+            startSec: startSec,
+            endSec: startSec + chunkDuration,
+            text: text,
+            detectedLang: detectedLang,
+          );
         }
+
+        _lastTranscribedSec = startSec + chunkDuration;
+        _consecutiveErrors = 0;
+        _statusText = 'Transcribing...';
+
+        // Try to display any newly available text
+        _displayBufferedText();
       } else {
-        _skipCount++;
-        if (_skipCount >= 2) {
-          _statusText = '${detectedLang.toUpperCase()} erkannt \u2014 warte auf ${_targetLang.toUpperCase()}...';
-          notifyListeners();
-        }
+        _consecutiveErrors++;
+        debugPrint('[VOD] Server error: ${response.statusCode} ${response.body}');
       }
     } catch (e) {
-      debugPrint('[Transcribe] Error: $e');
       _consecutiveErrors++;
+      debugPrint('[VOD] Error: $e');
 
-      if (_consecutiveErrors >= 3) {
-        // Try refreshing the stream after several consecutive errors
-        debugPrint('[Transcribe] Too many errors, refreshing stream...');
+      if (_consecutiveErrors >= 10) {
         _statusText = 'Verbindung wird wiederhergestellt...';
         notifyListeners();
-        try {
-          await _refreshAudioStream();
-          _consecutiveErrors = 0;
-        } catch (_) {
-          // Will retry on next timer tick
-        }
       }
     }
 
     _isProcessing = false;
   }
 
-  /// HTTP GET with exponential backoff retry
-  Future<http.Response?> _httpGetWithRetry(Uri uri, {Map<String, String>? headers}) async {
-    for (int attempt = 0; attempt < _maxRetries; attempt++) {
-      try {
-        final response = await http.get(uri, headers: headers)
-            .timeout(const Duration(seconds: 8));
-        return response;
-      } catch (e) {
-        debugPrint('[Transcribe] Retry ${attempt + 1}/$_maxRetries: $e');
-        if (attempt < _maxRetries - 1) {
-          await Future.delayed(_backoffDelay(attempt));
+  /// Display buffered text that matches current playback position
+  void _displayBufferedText() {
+    final entries = _vodBuffer.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+
+    bool changed = false;
+    for (final entry in entries) {
+      final chunk = entry.value;
+      if (chunk.displayed) continue;
+
+      // Show this chunk if playback has reached its start time
+      if (_currentPlaybackSec >= chunk.startSec - 0.5) {
+        chunk.displayed = true;
+        _lines.add(TranscriptLine(
+          text: chunk.text,
+          detectedLang: chunk.detectedLang,
+          timestamp: chunk.startSec,
+        ));
+
+        // Keep only the last N lines
+        while (_lines.length > AppConstants.maxTranscriptLines) {
+          _lines.removeAt(0);
         }
+        changed = true;
       }
     }
-    return null;
+
+    // Clean up old buffer entries
+    _vodBuffer.removeWhere((k, v) => v.displayed && k < _currentPlaybackSec - 30);
+
+    if (changed) notifyListeners();
   }
 
-  /// Parse a MIME type string into a MediaType for http_parser
-  MediaType _parseMediaType(String mimeType) {
-    final parts = mimeType.split('/');
-    if (parts.length == 2) {
-      return MediaType(parts[0], parts[1]);
+  // ═══════════════════════════════════════════════════════
+  //  Live Transcription
+  // ═══════════════════════════════════════════════════════
+
+  Future<void> _fetchLiveChunk() async {
+    if (!_isActive || _isProcessing || _currentVideoId == null) return;
+    if (_mode != TranscriptionMode.liveRemote && _mode != TranscriptionMode.liveInHall) return;
+
+    _isProcessing = true;
+
+    try {
+      final response = await http.post(
+        Uri.parse('${AppConstants.baseUrl}/api/transcribe-live'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'videoId': _currentVideoId,
+          'targetLang': _targetLang,
+        }),
+      ).timeout(const Duration(seconds: 20));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final text = (data['translatedText'] as String?)?.trim() ??
+            (data['text'] as String?)?.trim() ?? '';
+        final detectedLang = data['detectedLang'] as String? ?? 'unknown';
+        final cached = data['cached'] as bool? ?? false;
+
+        // Only add non-cached, non-empty text
+        if (text.length > 2 && !cached) {
+          _lines.add(TranscriptLine(
+            text: text,
+            detectedLang: detectedLang,
+            timestamp: DateTime.now().millisecondsSinceEpoch / 1000.0,
+          ));
+
+          while (_lines.length > AppConstants.maxTranscriptLines) {
+            _lines.removeAt(0);
+          }
+
+          _statusText = 'Live Transcription...';
+        } else if (cached) {
+          // Same segment as before — no new audio yet
+          _statusText = 'Warte auf neues Audio...';
+        }
+
+        _consecutiveErrors = 0;
+        notifyListeners();
+      } else if (response.statusCode == 400) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 'NOT_LIVE') {
+          _statusText = 'Stream ist nicht live';
+          notifyListeners();
+        }
+      } else {
+        _consecutiveErrors++;
+      }
+    } catch (e) {
+      _consecutiveErrors++;
+      debugPrint('[Live] Error: $e');
+
+      if (_consecutiveErrors >= 10) {
+        _statusText = 'Verbindung gestört...';
+        notifyListeners();
+      }
     }
-    return MediaType('audio', 'webm');
+
+    _isProcessing = false;
   }
 
   @override
@@ -297,4 +476,49 @@ class TranscriptionService extends ChangeNotifier {
     stop();
     super.dispose();
   }
+}
+
+/// A single transcript line with metadata
+class TranscriptLine {
+  final String text;
+  final String detectedLang;
+  final double timestamp;
+
+  TranscriptLine({
+    required this.text,
+    required this.detectedLang,
+    required this.timestamp,
+  });
+}
+
+/// Internal: YouTube caption segment
+class _CaptionSegment {
+  final double startSec;
+  final double endSec;
+  final String text;
+  bool displayed;
+
+  _CaptionSegment({
+    required this.startSec,
+    required this.endSec,
+    required this.text,
+    this.displayed = false,
+  });
+}
+
+/// Internal: buffered VOD chunk
+class _TranscriptChunk {
+  final double startSec;
+  final double endSec;
+  final String text;
+  final String detectedLang;
+  bool displayed;
+
+  _TranscriptChunk({
+    required this.startSec,
+    required this.endSec,
+    required this.text,
+    required this.detectedLang,
+    this.displayed = false,
+  });
 }
