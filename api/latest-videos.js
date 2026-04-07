@@ -154,14 +154,14 @@ export default async function handler(req, res) {
       }
     }
 
-    // Now sort these 6 by service date + time-of-day (morning → evening)
+    // Sort: newest first (left) → oldest last (right)
     recent.sort((a, b) => {
-      // Primary: service date ascending (oldest day first)
+      // Primary: service date descending (newest day first)
       if (a.serviceDate && b.serviceDate && a.serviceDate !== b.serviceDate) {
-        return a.serviceDate.localeCompare(b.serviceDate);
+        return b.serviceDate.localeCompare(a.serviceDate);
       }
-      // Secondary: time-of-day weight ascending (morning < afternoon < evening)
-      return a.timeWeight - b.timeWeight;
+      // Secondary: time-of-day weight descending (evening before morning on same day)
+      return b.timeWeight - a.timeWeight;
     });
 
     const latest = recent.map((v, i) => ({

@@ -39,7 +39,7 @@ const ALLOWED_ORIGINS = [
 ];
 
 function isAllowedOrigin(origin) {
-  if (!origin) return false;
+  if (!origin) return true; // Same-origin requests are allowed
   return ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed));
 }
 

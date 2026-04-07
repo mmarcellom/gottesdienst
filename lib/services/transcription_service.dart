@@ -62,22 +62,13 @@ class TranscriptionService extends ChangeNotifier {
 
   static String langLabel(String code) => _langLabels[code] ?? code.toUpperCase();
 
-  /// Set target language — reloads captions if in caption mode
+  /// Set target language — notifies listeners so the player updates cc_lang_pref
   void setLanguage(String lang) {
     if (_targetLang == lang) return;
     _targetLang = lang;
     _lines.clear();
-    _statusText = 'Sprache wechseln (${langLabel(lang)})...';
+    _statusText = 'Sprache: ${langLabel(lang)}';
     notifyListeners();
-
-    // Reload captions in new language if we were using captions
-    if (_captionsLoaded && _currentVideoId != null) {
-      _captionsLoaded = false;
-      _captionSegments = [];
-      _lastCaptionIndex = 0;
-      _pollTimer?.cancel();
-      _loadYouTubeCaptions(_currentVideoId!);
-    }
   }
 
   /// Start VOD transcription — uses YouTube's native CC (shown in embed player)

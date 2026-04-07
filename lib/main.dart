@@ -21,11 +21,12 @@ void main() async {
     DeviceOrientation.landscapeRight,
   ]);
 
-  // Initialize Supabase
+  // Initialize Supabase (sign out any stale web session so splash always shows)
   await Supabase.initialize(
     url: AppConstants.supabaseUrl,
     anonKey: AppConstants.supabaseAnonKey,
   );
+  // Session persists via browser localStorage — user stays logged in after refresh
 
   runApp(const TertiusApp());
 }

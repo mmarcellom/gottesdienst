@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Tertius Design Tokens — matches the web CSS tokens exactly
+/// Tertius Design Tokens — Inter as base font (like SF Pro on iOS)
 class TertiusTheme {
   TertiusTheme._();
 
@@ -56,29 +56,39 @@ class TertiusTheme {
 
   // ─── Theme Data ───
   static ThemeData get darkTheme {
+    final base = ThemeData(brightness: Brightness.dark);
+    final interTextTheme = GoogleFonts.interTextTheme(base.textTheme);
+
     return ThemeData(
       brightness: Brightness.dark,
       scaffoldBackgroundColor: bg,
+      fontFamily: GoogleFonts.inter().fontFamily,
       colorScheme: const ColorScheme.dark(
         primary: yellow,
         secondary: yellow,
         surface: surface,
         error: error,
       ),
-      textTheme: GoogleFonts.sourceSans3TextTheme(
-        const TextTheme(
-          displayLarge: TextStyle(fontSize: 42, fontWeight: FontWeight.w700, color: text, letterSpacing: 0.02 * 42),
-          displayMedium: TextStyle(fontSize: 36, fontWeight: FontWeight.w700, color: text, letterSpacing: 0.02 * 36),
-          headlineLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.w700, color: text, letterSpacing: 0.02 * 32),
-          headlineMedium: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: text, letterSpacing: 0.02 * 28),
-          titleLarge: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: text),
-          titleMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: text),
-          bodyLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, color: text),
-          bodyMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: text),
-          bodySmall: TextStyle(fontSize: 13, fontWeight: FontWeight.w400, color: textMid),
-          labelLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: yellowText),
-          labelSmall: TextStyle(fontSize: 11, fontWeight: FontWeight.w400, color: textMuted, letterSpacing: 0.15 * 11),
-        ),
+      textTheme: interTextTheme.copyWith(
+        // Page Title — 30px w700
+        displayLarge: GoogleFonts.inter(fontSize: 30, fontWeight: FontWeight.w700, color: text, letterSpacing: -0.8),
+        // Card Title / Headline — 17px w600
+        displayMedium: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w600, color: text, letterSpacing: -0.4),
+        // Section heading — 28px w700
+        headlineLarge: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.w700, color: text, letterSpacing: -0.5),
+        // Auth heading — 22px w600
+        headlineMedium: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w600, color: text),
+        // Title — 16px w600
+        titleLarge: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: text),
+        titleMedium: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: text),
+        // Body — 13-16px
+        bodyLarge: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w400, color: text),
+        bodyMedium: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w400, color: text),
+        bodySmall: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w400, color: textMid),
+        // Labels / Captions — 11px
+        labelLarge: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: yellowText),
+        labelMedium: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: text),
+        labelSmall: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w400, color: textMuted, letterSpacing: 0.1),
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
@@ -91,7 +101,7 @@ class TertiusTheme {
           borderRadius: BorderRadius.circular(radiusMd),
           borderSide: BorderSide.none,
         ),
-        hintStyle: const TextStyle(color: Color(0xFF3A4F62), fontWeight: FontWeight.w600),
+        hintStyle: GoogleFonts.inter(color: const Color(0xFF3A4F62), fontWeight: FontWeight.w400, fontSize: 15),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
     );

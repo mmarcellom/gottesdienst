@@ -257,8 +257,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
     if (_txService.isActive) {
       _txService.stop();
     } else if (_videos.isNotEmpty) {
-      // TODO: detect if video is live → use startLive instead
-      _txService.startVod(_videos[_currentIndex].videoId);
+      final video = _videos[_currentIndex];
+      if (video.isLive) {
+        _txService.startLive(video.videoId);
+      } else {
+        _txService.startVod(video.videoId);
+      }
     }
     setState(() {});
   }

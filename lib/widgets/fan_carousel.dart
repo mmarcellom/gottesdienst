@@ -60,7 +60,7 @@ class _FanCarouselState extends State<FanCarousel> {
     if (widget.videos.isEmpty) return const SizedBox.shrink();
 
     return SizedBox(
-      height: 100,
+      height: 114,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final isWide = constraints.maxWidth > 600;
@@ -70,8 +70,8 @@ class _FanCarouselState extends State<FanCarousel> {
             return ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: widget.videos.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
-              itemBuilder: (context, i) => _buildCard(context, i, 160, 90),
+              separatorBuilder: (_, __) => const SizedBox(width: 30),
+              itemBuilder: (context, i) => _buildCard(context, i, 200, 114),
             );
           }
 
@@ -137,7 +137,7 @@ class _FanCarouselState extends State<FanCarousel> {
           child: AnimatedScale(
             duration: const Duration(milliseconds: 400),
             scale: scale,
-            child: _buildCard(context, index, 110, 70),
+            child: _buildCard(context, index, 200, 114),
           ),
         ),
       ),
@@ -155,7 +155,7 @@ class _FanCarouselState extends State<FanCarousel> {
         width: width,
         height: height,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(25),
           border: isActive
               ? Border.all(color: Colors.white.withValues(alpha: 0.6), width: 2)
               : Border.all(color: Colors.white.withValues(alpha: 0.1)),
@@ -167,12 +167,16 @@ class _FanCarouselState extends State<FanCarousel> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Thumbnail
+            // Thumbnail — use mqdefault (320×180, no letterbox) instead of hqdefault (480×360, has black bars)
             CachedNetworkImage(
-              imageUrl: video.thumbnailUrl,
+              imageUrl: video.thumbnailUrl.replaceAll('hqdefault', 'mqdefault'),
               fit: BoxFit.cover,
               placeholder: (_, __) => Container(color: video.cardColor.withValues(alpha: 0.3)),
-              errorWidget: (_, __, ___) => Container(color: video.cardColor.withValues(alpha: 0.3)),
+              errorWidget: (_, __, ___) => CachedNetworkImage(
+                imageUrl: video.thumbnailUrl,
+                fit: BoxFit.cover,
+                errorWidget: (_, __, ___) => Container(color: video.cardColor.withValues(alpha: 0.3)),
+              ),
             ),
             // Overlay
             Container(
