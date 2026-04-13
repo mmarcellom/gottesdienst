@@ -8,6 +8,7 @@
     "api/transcribe-live.js": { "maxDuration": 25 },
     "api/translate.js": { "maxDuration": 10 },
     "api/transcribe.js": { "maxDuration": 15 },
-    "api/transcribe-captions.js": { "maxDuration": 30 }
+    "api/transcribe-captions.js": { "maxDuration": 30 },
+    "api/get-audio-url.py": { "maxDuration": 30 }
   }
 }
