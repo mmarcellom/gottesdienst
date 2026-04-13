@@ -125,13 +125,11 @@ class YouTubeHeroPlayerState extends State<YouTubeHeroPlayer> {
         ..src = embedUrl
         ..style.border = 'none'
         ..style.position = 'absolute'
-        ..style.top = '0'
+        ..style.top = '50%'
         ..style.left = '50%'
-        ..style.transform = 'translateX(-50%)'
-        ..style.width = '100vw'
-        ..style.height = '56.25vw'
-        ..style.minWidth = '100%'
-        ..style.minHeight = '100%'
+        ..style.transform = 'translate(-50%, -50%)'
+        ..style.width = '100%'
+        ..style.height = '100%'
         ..style.pointerEvents = 'none'
         ..allow = 'autoplay; encrypted-media; picture-in-picture'
         ..allowFullscreen = false
@@ -188,7 +186,9 @@ class YouTubeHeroPlayerState extends State<YouTubeHeroPlayer> {
       _readPlayerData();
     });
 
-    // Dynamic cover-fit via ResizeObserver
+    // Dynamic fit via ResizeObserver
+    // Browse mode: cover-fit (fills container, may crop)
+    // Fullscreen: contain-fit (shows entire video, may letterbox)
     js.context.callMethod('eval', ['''
       (function() {
         var wrapper = document.querySelector('[data-yt-wrapper="$_viewId"]');
@@ -200,18 +200,32 @@ class YouTubeHeroPlayerState extends State<YouTubeHeroPlayer> {
           var h = wrapper.clientHeight;
           if (w <= 0 || h <= 0) return;
           var containerAspect = w / h;
+          var isFS = document.fullscreenElement != null || document.documentElement.classList.contains('tertius-fs');
           iframes.forEach(function(iframe) {
-            if (containerAspect > videoAspect) {
-              iframe.style.width = w + 'px';
-              iframe.style.height = (w / videoAspect) + 'px';
+            if (isFS) {
+              // Contain: fit inside, no crop
+              if (containerAspect > videoAspect) {
+                iframe.style.height = h + 'px';
+                iframe.style.width = (h * videoAspect) + 'px';
+              } else {
+                iframe.style.width = w + 'px';
+                iframe.style.height = (w / videoAspect) + 'px';
+              }
             } else {
-              iframe.style.height = h + 'px';
-              iframe.style.width = (h * videoAspect) + 'px';
+              // Cover: fill container, may crop
+              if (containerAspect > videoAspect) {
+                iframe.style.width = w + 'px';
+                iframe.style.height = (w / videoAspect) + 'px';
+              } else {
+                iframe.style.height = h + 'px';
+                iframe.style.width = (h * videoAspect) + 'px';
+              }
             }
           });
         }
         resize();
         new ResizeObserver(resize).observe(wrapper);
+        document.addEventListener('fullscreenchange', resize);
       })();
     ''']);
 

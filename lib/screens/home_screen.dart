@@ -1315,21 +1315,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
     _heroPlayerStateKey.currentState?.setPlaybackRate(_playbackSpeed);
   }
 
-  // ─── Apple TV: Animated Seekbar (3px→6px) ───
+  // ─── Apple TV: Animated Seekbar (3px→6px, 48px hit target) ───
   Widget _buildATVSeekbar() {
     return LayoutBuilder(builder: (context, constraints) {
       final barWidth = constraints.maxWidth;
-      final trackH = _seekbarExpanded ? 6.0 : 3.0;
-      final thumbSize = _seekbarExpanded ? 14.0 : 10.0;
+      final trackH = _seekbarExpanded ? 8.0 : 4.0;
+      final thumbSize = _seekbarExpanded ? 16.0 : 12.0;
       return MouseRegion(
         onEnter: (_) => setState(() => _seekbarExpanded = true),
         onExit: (_) => setState(() => _seekbarExpanded = false),
         child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTapDown: (d) { setState(() => _seekbarExpanded = true); _seekTo((d.localPosition.dx / barWidth).clamp(0.0, 1.0)); },
           onHorizontalDragStart: (_) { setState(() => _seekbarExpanded = true); _controlsHideTimer?.cancel(); },
           onHorizontalDragUpdate: (d) { _seekTo((d.localPosition.dx / barWidth).clamp(0.0, 1.0)); },
           onHorizontalDragEnd: (_) { setState(() => _seekbarExpanded = false); _startControlsAutoHide(); },
-          child: Container(height: 32, alignment: Alignment.center, child: Stack(
+          child: Container(height: 48, alignment: Alignment.center, child: Stack(
             alignment: Alignment.centerLeft, clipBehavior: Clip.none,
             children: [
               AnimatedContainer(duration: const Duration(milliseconds: 150), curve: Curves.easeOut, height: trackH,
