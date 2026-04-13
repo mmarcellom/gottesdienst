@@ -452,6 +452,49 @@ class YouTubeHeroPlayerState extends State<YouTubeHeroPlayer> {
   double get duration => _duration;
   double get currentTime => _currentTime;
 
+  // ─── Fullscreen ───
+  static bool _pseudoFullscreen = false;
+  static bool get isFullscreen =>
+      _pseudoFullscreen || html.document.fullscreenElement != null;
+
+  static void _installPseudoFsStyle() {
+    if (html.document.getElementById('tertius-fs-style') != null) return;
+    final style = html.StyleElement()
+      ..id = 'tertius-fs-style'
+      ..text = '''
+        html.tertius-fs, html.tertius-fs body, html.tertius-fs flutter-view, html.tertius-fs flt-glass-pane {
+          position: fixed !important; inset: 0 !important;
+          width: 100vw !important; height: 100vh !important;
+          margin: 0 !important; padding: 0 !important; overflow: hidden !important;
+        }
+        html.tertius-fs { background: #000 !important; }
+      ''';
+    html.document.head?.append(style);
+  }
+
+  static Future<void> enterFullscreen() async {
+    final el = html.document.documentElement;
+    if (el == null) return;
+    try { await el.requestFullscreen(); } catch (_) {}
+    try { js.context.callMethod('eval', ["try{screen.orientation.lock('landscape').catch(function(){});}catch(e){}"]); } catch (_) {}
+    if (html.document.fullscreenElement == null) {
+      _installPseudoFsStyle();
+      el.classes.add('tertius-fs');
+      _pseudoFullscreen = true;
+    }
+  }
+
+  static Future<void> exitFullscreen() async {
+    try { if (html.document.fullscreenElement != null) html.document.exitFullscreen(); } catch (_) {}
+    try { js.context.callMethod('eval', ['try{if(screen.orientation&&screen.orientation.unlock)screen.orientation.unlock();}catch(e){}']); } catch (_) {}
+    html.document.documentElement?.classes.remove('tertius-fs');
+    _pseudoFullscreen = false;
+  }
+
+  static void toggleFullscreen() {
+    if (isFullscreen) exitFullscreen(); else enterFullscreen();
+  }
+
   @override
   Widget build(BuildContext context) {
     return HtmlElementView(viewType: _viewId);

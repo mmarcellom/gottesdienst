@@ -35,6 +35,12 @@ class TertiusTheme {
   // Cinema / video
   static const Color cinema = Colors.black;
 
+  // Apple TV Player
+  static const Color atvButtonBg = Color(0xB3323232);
+  static const Color atvMenuBg = Color(0xE6252525);
+  static const Color atvMenuSelected = Color(0xFF007AFF);
+  static const Color atvTextSecondary = Color(0x99FFFFFF);
+
   // ─── Radii ───
   static const double radiusSm = 8;
   static const double radiusMd = 12;

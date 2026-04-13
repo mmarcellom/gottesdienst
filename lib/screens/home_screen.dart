@@ -48,6 +48,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
   Timer? _controlsHideTimer;
   String? _skipFeedback;
   Timer? _skipFeedbackTimer;
+  bool _seekbarExpanded = false;
+  bool _subtitleMenuOpen = false;
+  bool _settingsMenuOpen = false;
 
   // Hero player key — changes to force rebuild when switching videos
   Key _heroPlayerKey = UniqueKey();
@@ -306,12 +309,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
   // ═══════════════════════════════════════════════════════
 
   KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
-    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
-      if (_immersive) {
-        _exitImmersive();
-        return KeyEventResult.handled;
-      }
-    }
+    if (event is! KeyDownEvent || !_immersive) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.escape) { _exitImmersive(); return KeyEventResult.handled; }
+    if (key == LogicalKeyboardKey.space) { _heroPlayerStateKey.currentState?.togglePlayPause(); setState(() {}); _showControls(); return KeyEventResult.handled; }
+    if (key == LogicalKeyboardKey.arrowLeft) { _skipSeconds(-10); _showControls(); return KeyEventResult.handled; }
+    if (key == LogicalKeyboardKey.arrowRight) { _skipSeconds(10); _showControls(); return KeyEventResult.handled; }
+    if (key == LogicalKeyboardKey.keyM) { setState(() => _muted = !_muted); if (_muted) _heroPlayerStateKey.currentState?.mute(); else _heroPlayerStateKey.currentState?.unMute(); _showControls(); return KeyEventResult.handled; }
+    if (key == LogicalKeyboardKey.keyF) { YouTubeHeroPlayerState.toggleFullscreen(); Future.delayed(const Duration(milliseconds: 150), () { if (mounted) setState(() {}); }); return KeyEventResult.handled; }
     return KeyEventResult.ignored;
   }
 
@@ -747,11 +752,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
             GestureDetector(
               onDoubleTapDown: (details) {
                 final sw = screenW;
-                if (details.globalPosition.dx < sw / 3) {
-                  _skipSeconds(-10);
-                } else if (details.globalPosition.dx > sw * 2 / 3) {
-                  _skipSeconds(10);
-                }
+                if (details.globalPosition.dx < sw / 3) _skipSeconds(-10);
+                else if (details.globalPosition.dx > sw * 2 / 3) _skipSeconds(10);
               },
               onDoubleTap: () {},
               behavior: HitTestBehavior.translucent,
@@ -761,18 +763,67 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
             // Skip feedback
             if (_skipFeedback != null)
               Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 140),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    decoration: BoxDecoration(color: Colors.black.withOpacity(0.6), borderRadius: BorderRadius.circular(12)),
+                    child: Text(_skipFeedback!, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w700)),
                   ),
-                  child: Text(_skipFeedback!,
-                    style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w700)),
                 ),
               ),
 
-            // Top controls (close, transcription, language)
+            // Top scrim
+            Positioned(
+              top: 0, left: 0, right: 0,
+              child: IgnorePointer(
+                child: AnimatedOpacity(
+                  opacity: _controlsVisible ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 400),
+                  child: Container(height: 120, decoration: BoxDecoration(
+                    gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.black.withOpacity(0.4), Colors.transparent]),
+                  )),
+                ),
+              ),
+            ),
+
+            // ── Center controls (Play/Pause + Skip ±10s) ──
+            Center(
+              child: AnimatedOpacity(
+                opacity: _controlsVisible ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 400),
+                child: IgnorePointer(
+                  ignoring: !_controlsVisible,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      GestureDetector(
+                        onTap: () { _skipSeconds(-10); _showControls(); },
+                        child: Container(width: 50, height: 50,
+                          decoration: const BoxDecoration(shape: BoxShape.circle, color: TertiusTheme.atvButtonBg),
+                          child: const Icon(Icons.replay_10_rounded, size: 28, color: Colors.white)),
+                      ),
+                      const SizedBox(width: 40),
+                      GestureDetector(
+                        onTap: () { _heroPlayerStateKey.currentState?.togglePlayPause(); setState(() {}); _showControls(); },
+                        child: Container(width: 80, height: 80,
+                          decoration: const BoxDecoration(shape: BoxShape.circle, color: TertiusTheme.atvButtonBg),
+                          child: Icon((_heroPlayerStateKey.currentState?.isPaused ?? false) ? Icons.play_arrow_rounded : Icons.pause_rounded, size: 44, color: Colors.white)),
+                      ),
+                      const SizedBox(width: 40),
+                      GestureDetector(
+                        onTap: () { _skipSeconds(10); _showControls(); },
+                        child: Container(width: 50, height: 50,
+                          decoration: const BoxDecoration(shape: BoxShape.circle, color: TertiusTheme.atvButtonBg),
+                          child: const Icon(Icons.forward_10_rounded, size: 28, color: Colors.white)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // ── Top bar (Fullscreen, Volume, Close) ──
             Positioned(
               top: 0, left: 0, right: 0,
               child: AnimatedOpacity(
@@ -780,70 +831,43 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
                 duration: const Duration(milliseconds: 400),
                 child: IgnorePointer(
                   ignoring: !_controlsVisible,
-                  child: SafeArea(
-                    bottom: false,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                      child: Row(
-                        children: [
-                          // Close / ESC
-                          _immersiveBtn(Icons.close, onTap: _exitImmersive),
-                          const Spacer(),
-                          // Transcription toggle
-                          _immersiveBtn(
-                            Icons.subtitles_outlined,
-                            active: _txService.isActive,
-                            onTap: _toggleTranscription,
-                          ),
-                          const SizedBox(width: 8),
-                          // Language selector
-                          _immersiveBtn(
-                            Icons.translate,
-                            onTap: () => setState(() => _langMenuOpen = !_langMenuOpen),
-                          ),
-                          const SizedBox(width: 8),
-                          // Mute in immersive
-                          _immersiveBtn(
-                            _muted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
-                            onTap: () {
-                              setState(() => _muted = !_muted);
-                              if (_muted) {
-                                _heroPlayerStateKey.currentState?.mute();
-                              } else {
-                                _heroPlayerStateKey.currentState?.unMute();
-                              }
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  child: SafeArea(bottom: false, child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(children: [
+                      _atvIcon(YouTubeHeroPlayerState.isFullscreen ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded,
+                        onTap: () { YouTubeHeroPlayerState.toggleFullscreen(); Future.delayed(const Duration(milliseconds: 150), () { if (mounted) setState(() {}); }); }),
+                      const Spacer(),
+                      _atvIcon(_muted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                        onTap: () { setState(() => _muted = !_muted); if (_muted) _heroPlayerStateKey.currentState?.mute(); else _heroPlayerStateKey.currentState?.unMute(); }),
+                      const SizedBox(width: 4),
+                      _atvIcon(Icons.close, onTap: _exitImmersive),
+                    ]),
+                  )),
                 ),
               ),
             ),
 
-            // Language dropdown
-            if (_langMenuOpen)
-              Positioned(
-                top: 70, right: 80,
-                child: SafeArea(
-                  child: _buildLanguageMenu(),
-                ),
-              ),
-
-            // Transcript overlay — only when we have our own lines (RTMP/Whisper)
-            // YouTube native CC is rendered inside the iframe, no overlay needed
+            // Transcript overlay
             if (_txService.isActive && _txService.lines.isNotEmpty)
-              Positioned(
-                left: 0, right: 0, bottom: 60,
-                child: TranscriptOverlay(
-                  lines: _txService.lines,
-                  statusText: _txService.statusText,
-                  isActive: _txService.isActive,
-                ),
-              ),
+              Positioned(left: 0, right: 0, bottom: 110,
+                child: TranscriptOverlay(lines: _txService.lines, statusText: _txService.statusText, isActive: _txService.isActive)),
 
-            // Bottom controls: play/pause + seekbar + time + speed
+            // ── Menu dismiss zone ──
+            if (_subtitleMenuOpen || _langMenuOpen || _settingsMenuOpen)
+              Positioned.fill(child: GestureDetector(
+                onTap: () => setState(() { _subtitleMenuOpen = false; _langMenuOpen = false; _settingsMenuOpen = false; }),
+                child: Container(color: Colors.transparent),
+              )),
+
+            // ── Dropdown menus (anchored bottom-right) ──
+            if (_subtitleMenuOpen)
+              Positioned(bottom: 100, right: 16, child: _buildATVSubtitleMenu()),
+            if (_langMenuOpen)
+              Positioned(bottom: 100, right: 60, child: _buildLanguageMenu()),
+            if (_settingsMenuOpen)
+              Positioned(bottom: 100, right: 16, child: _buildATVSettingsMenu()),
+
+            // ── Bottom bar (title + seekbar + icons) ──
             Positioned(
               left: 0, right: 0, bottom: 0,
               child: AnimatedOpacity(
@@ -851,55 +875,48 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
                 duration: const Duration(milliseconds: 400),
                 child: IgnorePointer(
                   ignoring: !_controlsVisible,
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, Colors.black.withOpacity(0.6)],
-                      ),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Seekbar
-                        _buildSeekableProgressBar(),
-                        const SizedBox(height: 8),
-                        // Controls row
-                        Row(
-                          children: [
-                            // Play/Pause
-                            GestureDetector(
-                              onTap: () {
-                                _heroPlayerStateKey.currentState?.togglePlayPause();
-                                setState(() {});
-                              },
-                              child: Icon(
-                                (_heroPlayerStateKey.currentState?.isPaused ?? false)
-                                    ? Icons.play_arrow_rounded
-                                    : Icons.pause_rounded,
-                                color: Colors.white, size: 28,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            // Time
-                            Text(
-                              '${_formatTime(_progressFraction * _totalDuration)} / ${_formatTime(_totalDuration)}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.white.withOpacity(0.7),
-                                fontFeatures: const [FontFeature.tabularFigures()],
-                              ),
-                            ),
-                            const Spacer(),
-                            // Speed selector
-                            _buildSpeedSelector(),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+                  child: SafeArea(top: false, child: Container(
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+                    decoration: BoxDecoration(gradient: LinearGradient(
+                      begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                      colors: [Colors.transparent, Colors.black.withOpacity(0.75)], stops: const [0.0, 0.5],
+                    )),
+                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                      // Row 1: metadata left, icons right
+                      Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                          if (_videos.isNotEmpty && _videos[_currentIndex].published != null)
+                            Text(_videos[_currentIndex].published!, style: GoogleFonts.inter(fontSize: 13, color: TertiusTheme.atvTextSecondary)),
+                          const SizedBox(height: 2),
+                          Text(_videos.isNotEmpty ? _videos[_currentIndex].title : '',
+                            style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
+                            maxLines: 1, overflow: TextOverflow.ellipsis),
+                        ])),
+                        Row(mainAxisSize: MainAxisSize.min, children: [
+                          // Subtitles (opens menu)
+                          _atvIcon(Icons.subtitles_outlined, onTap: () => setState(() {
+                            _subtitleMenuOpen = !_subtitleMenuOpen; _langMenuOpen = false; _settingsMenuOpen = false;
+                          })),
+                          const SizedBox(width: 4),
+                          // Settings / Speed (opens menu)
+                          _atvIcon(Icons.settings_outlined, onTap: () => setState(() {
+                            _settingsMenuOpen = !_settingsMenuOpen; _subtitleMenuOpen = false; _langMenuOpen = false;
+                          })),
+                        ]),
+                      ]),
+                      const SizedBox(height: 8),
+                      // Row 2: time + seekbar + remaining time
+                      Row(children: [
+                        Text(_formatTime(_progressFraction * _totalDuration),
+                          style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.7), fontFeatures: const [FontFeature.tabularFigures()])),
+                        const SizedBox(width: 10),
+                        Expanded(child: _buildATVSeekbar()),
+                        const SizedBox(width: 10),
+                        Text(_formatRemainingTime(_progressFraction * _totalDuration, _totalDuration),
+                          style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.7), fontFeatures: const [FontFeature.tabularFigures()])),
+                      ]),
+                    ]),
+                  )),
                 ),
               ),
             ),
@@ -1278,6 +1295,118 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
     );
   }
 
+  // ─── Apple TV helper: flat icon button ───
+  Widget _atvIcon(IconData icon, {VoidCallback? onTap, double size = 22}) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Icon(icon, color: Colors.white.withOpacity(0.8), size: size),
+      ),
+    );
+  }
+
+  void _cycleSpeed() {
+    final speeds = [0.5, 1.0, 1.25, 1.5, 2.0];
+    final idx = speeds.indexOf(_playbackSpeed);
+    final next = (idx + 1) % speeds.length;
+    setState(() => _playbackSpeed = speeds[next]);
+    _heroPlayerStateKey.currentState?.setPlaybackRate(_playbackSpeed);
+  }
+
+  // ─── Apple TV: Animated Seekbar (3px→6px) ───
+  Widget _buildATVSeekbar() {
+    return LayoutBuilder(builder: (context, constraints) {
+      final barWidth = constraints.maxWidth;
+      final trackH = _seekbarExpanded ? 6.0 : 3.0;
+      final thumbSize = _seekbarExpanded ? 14.0 : 10.0;
+      return MouseRegion(
+        onEnter: (_) => setState(() => _seekbarExpanded = true),
+        onExit: (_) => setState(() => _seekbarExpanded = false),
+        child: GestureDetector(
+          onTapDown: (d) { setState(() => _seekbarExpanded = true); _seekTo((d.localPosition.dx / barWidth).clamp(0.0, 1.0)); },
+          onHorizontalDragStart: (_) { setState(() => _seekbarExpanded = true); _controlsHideTimer?.cancel(); },
+          onHorizontalDragUpdate: (d) { _seekTo((d.localPosition.dx / barWidth).clamp(0.0, 1.0)); },
+          onHorizontalDragEnd: (_) { setState(() => _seekbarExpanded = false); _startControlsAutoHide(); },
+          child: Container(height: 32, alignment: Alignment.center, child: Stack(
+            alignment: Alignment.centerLeft, clipBehavior: Clip.none,
+            children: [
+              AnimatedContainer(duration: const Duration(milliseconds: 150), curve: Curves.easeOut, height: trackH,
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(trackH / 2), color: Colors.white.withOpacity(0.3))),
+              FractionallySizedBox(widthFactor: _progressFraction.clamp(0.0, 1.0),
+                child: AnimatedContainer(duration: const Duration(milliseconds: 150), height: trackH,
+                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(trackH / 2), color: TertiusTheme.live))),
+              Positioned(left: (barWidth * _progressFraction.clamp(0.0, 1.0)) - thumbSize / 2,
+                child: AnimatedContainer(duration: const Duration(milliseconds: 150), width: thumbSize, height: thumbSize,
+                  decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white,
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.4), blurRadius: 4)]))),
+            ],
+          )),
+        ),
+      );
+    });
+  }
+
+  // ─── Apple TV: Subtitle Menu ───
+  Widget _buildATVSubtitleMenu() {
+    final captionsOn = _txService.isActive;
+    return Container(
+      width: 240, padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(color: TertiusTheme.atvMenuBg, borderRadius: BorderRadius.circular(14)),
+      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Padding(padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+          child: Text('Untertitel', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: TertiusTheme.atvTextSecondary))),
+        _atvMenuItem(label: 'Automatisch', selected: captionsOn,
+          onTap: () { if (!captionsOn) _toggleTranscription(); setState(() => _subtitleMenuOpen = false); }),
+        _atvMenuItem(label: 'Aus', selected: !captionsOn,
+          onTap: () { if (captionsOn) _toggleTranscription(); setState(() => _subtitleMenuOpen = false); }),
+      ]),
+    );
+  }
+
+  // ─── Apple TV: Settings / Speed Menu ───
+  Widget _buildATVSettingsMenu() {
+    final speeds = [0.5, 1.0, 1.25, 1.5, 2.0];
+    return Container(
+      width: 200, padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(color: TertiusTheme.atvMenuBg, borderRadius: BorderRadius.circular(14)),
+      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Padding(padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+          child: Text('Geschwindigkeit', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: TertiusTheme.atvTextSecondary))),
+        for (final speed in speeds)
+          _atvMenuItem(label: '${speed}x', selected: _playbackSpeed == speed,
+            onTap: () { setState(() { _playbackSpeed = speed; _settingsMenuOpen = false; }); _heroPlayerStateKey.currentState?.setPlaybackRate(speed); }),
+      ]),
+    );
+  }
+
+  // ─── Apple TV: Menu Item ───
+  Widget _atvMenuItem({required String label, required bool selected, VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap, behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        color: selected ? TertiusTheme.atvMenuSelected.withOpacity(0.2) : Colors.transparent,
+        child: Row(children: [
+          if (selected) Padding(padding: const EdgeInsets.only(right: 8),
+            child: Icon(Icons.check, size: 16, color: TertiusTheme.atvMenuSelected)),
+          Text(label, style: GoogleFonts.inter(fontSize: 15, color: Colors.white, fontWeight: selected ? FontWeight.w600 : FontWeight.w400)),
+        ]),
+      ),
+    );
+  }
+
+  String _formatRemainingTime(double current, double total) {
+    final rem = total - current;
+    if (rem <= 0) return '-0:00';
+    final h = (rem / 3600).floor();
+    final m = ((rem % 3600) / 60).floor();
+    final s = (rem % 60).floor();
+    if (h > 0) return '-$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    return '-$m:${s.toString().padLeft(2, '0')}';
+  }
+
   Widget _immersiveBtn(IconData icon, {VoidCallback? onTap, bool active = false}) {
     return GestureDetector(
       onTap: onTap,
@@ -1409,8 +1538,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
   }
 
   String _formatTime(double seconds) {
-    final m = (seconds / 60).floor();
+    if (seconds < 0) seconds = 0;
+    final h = (seconds / 3600).floor();
+    final m = ((seconds % 3600) / 60).floor();
     final s = (seconds % 60).floor();
+    if (h > 0) return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
     return '$m:${s.toString().padLeft(2, '0')}';
   }
 }
