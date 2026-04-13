@@ -133,9 +133,12 @@ class YouTubeHeroPlayerState extends State<YouTubeHeroPlayer> {
         ..style.minWidth = '100%'
         ..style.minHeight = '100%'
         ..style.pointerEvents = 'none'
-        ..allow = 'autoplay; encrypted-media; picture-in-picture'
+        ..allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen'
         ..allowFullscreen = false
-        ..setAttribute('frameborder', '0');
+        ..setAttribute('frameborder', '0')
+        ..setAttribute('playsinline', 'true')
+        ..setAttribute('webkit-playsinline', 'true')
+        ..setAttribute('loading', 'eager');
 
       _mainIframe!.onLoad.listen((_) {
         _onIframeLoaded();
@@ -201,13 +204,20 @@ class YouTubeHeroPlayerState extends State<YouTubeHeroPlayer> {
           if (w <= 0 || h <= 0) return;
           var containerAspect = w / h;
           iframes.forEach(function(iframe) {
+            var iw, ih;
             if (containerAspect > videoAspect) {
-              iframe.style.width = w + 'px';
-              iframe.style.height = (w / videoAspect) + 'px';
+              iw = w;
+              ih = w / videoAspect;
             } else {
-              iframe.style.height = h + 'px';
-              iframe.style.width = (h * videoAspect) + 'px';
+              ih = h;
+              iw = h * videoAspect;
             }
+            iframe.style.width = iw + 'px';
+            iframe.style.height = ih + 'px';
+            // Align bottom of iframe to bottom of wrapper so native CC subtitles stay visible
+            iframe.style.top = (h - ih) + 'px';
+            iframe.style.left = ((w - iw) / 2) + 'px';
+            iframe.style.transform = 'none';
           });
         }
         resize();
@@ -451,6 +461,170 @@ class YouTubeHeroPlayerState extends State<YouTubeHeroPlayer> {
   bool get isPaused => _isPaused;
   double get duration => _duration;
   double get currentTime => _currentTime;
+
+  /// Fullscreen handling.
+  ///
+  /// Strategy:
+  ///   • Desktop / Android: native HTML5 Fullscreen API on documentElement,
+  ///     plus screen.orientation.lock('landscape') on mobile.
+  ///   • iOS Safari: no element fullscreen API exists, so we install a CSS
+  ///     pseudo-fullscreen class on <html> that pins everything to 100vw/100vh
+  ///     and hides the page scroll. The user can flip the device to landscape.
+  static bool _pseudoFullscreen = false;
+  static bool get isFullscreen =>
+      _pseudoFullscreen || html.document.fullscreenElement != null;
+
+  static void _installPseudoFsStyle() {
+    if (html.document.getElementById('tertius-fs-style') != null) return;
+    final style = html.StyleElement()
+      ..id = 'tertius-fs-style'
+      ..text = '''
+        html.tertius-fs, html.tertius-fs body, html.tertius-fs flutter-view, html.tertius-fs flt-glass-pane {
+          position: fixed !important;
+          inset: 0 !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: hidden !important;
+        }
+        html.tertius-fs { background: #000 !important; }
+      ''';
+    html.document.head?.append(style);
+  }
+
+  static Future<void> enterFullscreen() async {
+    final el = html.document.documentElement;
+    if (el == null) return;
+
+    // 1) Try native Fullscreen API first (Desktop, Android, modern Safari macOS).
+    try {
+      // dart:html exposes requestFullscreen() directly on Element.
+      final result = el.requestFullscreen();
+      // requestFullscreen returns a Future in modern browsers.
+      // ignore: unnecessary_null_comparison
+      if (result != null) {
+        await result;
+      }
+    } catch (_) {
+      // Fall through to pseudo-fullscreen.
+    }
+
+    // 2) Try to lock landscape on mobile (best effort, ignored on desktop).
+    try {
+      js.context.callMethod('eval', ['''
+        try {
+          if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock('landscape').catch(function(){});
+          }
+        } catch(e){}
+      ''']);
+    } catch (_) {}
+
+    // 3) If native FS didn't engage (iOS Safari), apply pseudo-fullscreen CSS.
+    if (html.document.fullscreenElement == null) {
+      _installPseudoFsStyle();
+      el.classes.add('tertius-fs');
+      _pseudoFullscreen = true;
+    }
+  }
+
+  static Future<void> exitFullscreen() async {
+    // Native FS exit
+    try {
+      if (html.document.fullscreenElement != null) {
+        html.document.exitFullscreen();
+      }
+    } catch (_) {}
+
+    // Unlock orientation
+    try {
+      js.context.callMethod('eval', [
+        'try{if(screen.orientation&&screen.orientation.unlock)screen.orientation.unlock();}catch(e){}'
+      ]);
+    } catch (_) {}
+
+    // Pseudo-FS exit
+    html.document.documentElement?.classes.remove('tertius-fs');
+    _pseudoFullscreen = false;
+  }
+
+  static void toggleFullscreen() {
+    if (isFullscreen) {
+      exitFullscreen();
+    } else {
+      enterFullscreen();
+    }
+  }
+
+  /// Request Picture-in-Picture on the YouTube iframe.
+  /// Uses Document PiP API on the iframe element, or falls back to
+  /// trying to reach the video element inside the iframe (cross-origin limited).
+  static void requestPiP() {
+    js.context.callMethod('eval', ['''
+      (function() {
+        try {
+          // 1) Try Document PiP API (Chrome 116+) on the iframe itself
+          var iframe = document.querySelector('iframe[src*="youtube.com"]');
+          if (iframe && iframe.requestPictureInPicture) {
+            iframe.requestPictureInPicture().catch(function(e) {
+              console.log('PiP on iframe failed:', e);
+            });
+            return;
+          }
+          // 2) Try documentPictureInPicture API (Chrome 116+)
+          if (window.documentPictureInPicture && iframe) {
+            window.documentPictureInPicture.requestWindow({
+              width: iframe.clientWidth / 2,
+              height: iframe.clientHeight / 2,
+            }).then(function(pipWindow) {
+              var clone = iframe.cloneNode(true);
+              clone.style.width = '100%';
+              clone.style.height = '100%';
+              clone.style.position = 'fixed';
+              clone.style.inset = '0';
+              pipWindow.document.body.style.margin = '0';
+              pipWindow.document.body.style.overflow = 'hidden';
+              pipWindow.document.body.appendChild(clone);
+            }).catch(function(e) {
+              console.log('Document PiP failed:', e);
+            });
+            return;
+          }
+          console.log('PiP API not available');
+        } catch(e) {
+          console.log('PiP error:', e);
+        }
+      })();
+    ''']);
+  }
+
+  /// Request AirPlay playback target picker (Safari/WebKit only).
+  static void requestAirPlay() {
+    js.context.callMethod('eval', ['''
+      (function() {
+        try {
+          // Try on any video element in the page (works if same-origin)
+          var video = document.querySelector('video');
+          if (video && video.webkitShowPlaybackTargetPicker) {
+            video.webkitShowPlaybackTargetPicker();
+            return;
+          }
+          // For cross-origin YouTube iframes, AirPlay is handled by YouTube's
+          // built-in controls. We can try the Remote Playback API as fallback.
+          if (video && video.remote && video.remote.prompt) {
+            video.remote.prompt().catch(function(e) {
+              console.log('Remote Playback prompt failed:', e);
+            });
+            return;
+          }
+          console.log('AirPlay not available on this browser/platform');
+        } catch(e) {
+          console.log('AirPlay error:', e);
+        }
+      })();
+    ''']);
+  }
 
   @override
   Widget build(BuildContext context) {

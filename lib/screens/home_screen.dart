@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:ui' as ui;
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -18,6 +20,7 @@ import '../widgets/transcript_overlay.dart';
 import '../widgets/shimmer_card.dart';
 import 'splash_screen.dart';
 import 'roadmap_screen.dart';
+import 'migration_plan_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -48,6 +51,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
   Timer? _controlsHideTimer;
   String? _skipFeedback;
   Timer? _skipFeedbackTimer;
+  bool _seekbarExpanded = false;
+
+  // Apple TV player UI
+  static const bool _useAppleTVControls = true;
+  bool _subtitleMenuOpen = false;
+  bool _settingsMenuOpen = false;
 
   // Hero player key — changes to force rebuild when switching videos
   Key _heroPlayerKey = UniqueKey();
@@ -63,6 +72,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
   late AnimationController _fadeController;
   int? _pendingVideoIndex;
   bool _langMenuOpen = false;
+  bool _audioLangMenuOpen = false;
+  // Audio-language override for paired streams. When non-null, the hero player
+  // plays this videoId instead of the current VideoItem's default videoId.
+  String? _audioOverrideVideoId;
+  String? _audioOverrideLang;
+
+  // Available YouTube caption tracks for the currently playing video.
+  // `null` = not yet loaded, `[]` = no captions available → hide translate UI.
+  List<String>? _availableCaptionLangs;
+  String? _captionsForVideoId;
+
+  /// True when the user manually turned YouTube native captions off.
+  /// Independent of our _txService to allow disabling auto-loaded YT captions.
+  bool _ytCaptionsManuallyOff = false;
   int _tabIndex = 0;
   double _scrollOffset = 0.0;
 
@@ -188,7 +211,78 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
       _muted = true;
       _progressFraction = 0.0;
       _totalDuration = 0.0;
+      _audioOverrideVideoId = null;
+      _audioOverrideLang = null;
+      _availableCaptionLangs = null;
+      _captionsForVideoId = null;
       // NO UniqueKey — keep the iframe alive, just switch video inside it
+    });
+    _loadAvailableCaptions(_videos[_currentIndex].videoId);
+  }
+
+  /// Fetch the list of YouTube caption tracks available for the current video.
+  /// Result drives which languages appear in the transcription target menu,
+  /// and whether the transcription button is shown at all.
+  Future<void> _loadAvailableCaptions(String videoId) async {
+    if (_captionsForVideoId == videoId) return;
+    _captionsForVideoId = videoId;
+    if (mounted) setState(() => _availableCaptionLangs = null);
+    try {
+      final res = await http
+          .get(Uri.parse('${AppConstants.baseUrl}/api/captions?videoId=$videoId'))
+          .timeout(const Duration(seconds: 8));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        final langs = (data['langs'] as List?)?.map((e) => e.toString()).toList() ?? <String>[];
+        if (mounted && _captionsForVideoId == videoId) {
+          setState(() => _availableCaptionLangs = langs);
+        }
+      } else {
+        if (mounted && _captionsForVideoId == videoId) {
+          setState(() => _availableCaptionLangs = <String>[]);
+        }
+      }
+    } catch (_) {
+      if (mounted && _captionsForVideoId == videoId) {
+        setState(() => _availableCaptionLangs = <String>[]);
+      }
+    }
+  }
+
+  /// Switch the audio language of the currently playing paired stream.
+  /// Preserves playback position so the swap feels like a pure audio switch.
+  void _switchAudioLang(String lang) {
+    if (_videos.isEmpty) return;
+    final v = _videos[_currentIndex];
+    final variants = v.audioVariants;
+    if (variants == null || !variants.containsKey(lang)) return;
+    final newVideoId = variants[lang]!;
+    final currentActive = _audioOverrideVideoId ?? v.videoId;
+    if (newVideoId == currentActive) return;
+    final currentSec = _heroPlayerStateKey.currentState?.currentTime ?? 0;
+    setState(() {
+      _audioOverrideVideoId = newVideoId;
+      _audioOverrideLang = lang;
+      _audioLangMenuOpen = false;
+    });
+    // Captions belong to the new video → refresh the available list
+    _loadAvailableCaptions(newVideoId);
+    // Seek to the same position once the new video loaded
+    Future.delayed(const Duration(milliseconds: 900), () {
+      if (!mounted) return;
+      if (currentSec > 2) {
+        _heroPlayerStateKey.currentState?.seekTo(currentSec);
+      }
+      // The iframe reloads with mute=1 in the URL — restore unmuted state
+      // if the user is currently in immersive (audible) mode.
+      if (!_muted) {
+        _heroPlayerStateKey.currentState?.unMute();
+      }
+    });
+    // Also fire an early unmute attempt in case the player is ready sooner
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (!mounted) return;
+      if (!_muted) _heroPlayerStateKey.currentState?.unMute();
     });
   }
 
@@ -238,6 +332,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
       _muted = true;
       _controlsVisible = true;
       _langMenuOpen = false;
+      _audioLangMenuOpen = false;
     });
 
     WakelockPlus.disable();
@@ -254,15 +349,26 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
   }
 
   void _toggleTranscription() {
-    if (_txService.isActive) {
-      _txService.stop();
-    } else if (_videos.isNotEmpty) {
-      final video = _videos[_currentIndex];
-      if (video.isLive) {
-        _txService.startLive(video.videoId);
-      } else {
-        _txService.startVod(video.videoId);
+    // If captions (YT or ours) are currently visible → turn them OFF.
+    // Otherwise turn them back ON.
+    final currentlyOn = _txService.isActive || !_ytCaptionsManuallyOff;
+    if (currentlyOn) {
+      if (_txService.isActive) _txService.stop();
+      _ytCaptionsManuallyOff = true;
+      // Ask the YouTube iframe to unload its captions module
+      _heroPlayerStateKey.currentState?.setCaptions(false);
+    } else {
+      _ytCaptionsManuallyOff = false;
+      if (_videos.isNotEmpty) {
+        final video = _videos[_currentIndex];
+        if (video.isLive) {
+          _txService.startLive(video.videoId);
+        } else {
+          _txService.startVod(video.videoId);
+        }
       }
+      // Re-enable YT native captions as well
+      _heroPlayerStateKey.currentState?.setCaptions(true, lang: _txService.targetLang);
     }
     setState(() {});
   }
@@ -306,11 +412,41 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
   // ═══════════════════════════════════════════════════════
 
   KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
-    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
-      if (_immersive) {
-        _exitImmersive();
-        return KeyEventResult.handled;
-      }
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    if (!_immersive) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.escape) {
+      _exitImmersive();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.space) {
+      _heroPlayerStateKey.currentState?.togglePlayPause();
+      setState(() {}); _showControls();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.arrowLeft) {
+      _skipSeconds(-10); _showControls();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.arrowRight) {
+      _skipSeconds(10); _showControls();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.keyM) {
+      setState(() => _muted = !_muted);
+      if (_muted) { _heroPlayerStateKey.currentState?.mute(); }
+      else { _heroPlayerStateKey.currentState?.unMute(); }
+      _showControls();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.keyF) {
+      YouTubeHeroPlayerState.toggleFullscreen();
+      Future.delayed(const Duration(milliseconds: 150), () { if (mounted) setState(() {}); });
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.keyC) {
+      _toggleTranscription(); _showControls();
+      return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
   }
@@ -366,12 +502,32 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // YouTube iframe player (muted autoplay)
+                // Thumbnail background — always visible, prevents gray screen on mobile
+                // when the YouTube iframe is slow to load or blocked by the browser.
+                if (heroVideo != null)
+                  Positioned.fill(
+                    child: CachedNetworkImage(
+                      imageUrl: 'https://img.youtube.com/vi/${heroVideo.videoId}/maxresdefault.jpg',
+                      fit: BoxFit.cover,
+                      fadeInDuration: const Duration(milliseconds: 300),
+                      placeholder: (_, __) => Container(color: Colors.black),
+                      errorWidget: (_, __, ___) => CachedNetworkImage(
+                        imageUrl: heroVideo.thumbnailUrl,
+                        fit: BoxFit.cover,
+                        placeholder: (_, __) => Container(color: Colors.black),
+                        errorWidget: (_, __, ___) => Container(color: Colors.black),
+                      ),
+                    ),
+                  )
+                else
+                  Positioned.fill(child: Container(color: Colors.black)),
+
+                // YouTube iframe player (muted autoplay) — overlaid on top of thumbnail
                 if (heroVideo != null)
                   Positioned.fill(
                     child: YouTubeHeroPlayer(
                       key: _heroPlayerStateKey,
-                      videoId: heroVideo.videoId,
+                      videoId: _audioOverrideVideoId ?? heroVideo.videoId,
                       muted: _muted,
                       showCaptions: _txService.isActive,
                       captionLang: _txService.targetLang,
@@ -700,6 +856,38 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
                                                     ),
                                                   ),
                                                   const SizedBox(width: 6),
+                                                  // Migration button
+                                                  GestureDetector(
+                                                    onTap: () {
+                                                      setState(() => _logoutVisible = false);
+                                                      Navigator.push(context,
+                                                        PageRouteBuilder(
+                                                          pageBuilder: (_, __, ___) => const MigrationPlanScreen(),
+                                                          transitionsBuilder: (_, a, __, child) =>
+                                                            FadeTransition(opacity: a, child: child),
+                                                          transitionDuration: const Duration(milliseconds: 300),
+                                                        ),
+                                                      );
+                                                    },
+                                                    child: Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                                      decoration: BoxDecoration(
+                                                        color: const Color(0xFF4F7CFF).withOpacity(0.15),
+                                                        borderRadius: BorderRadius.circular(12),
+                                                        border: Border.all(color: const Color(0xFF4F7CFF).withOpacity(0.3)),
+                                                      ),
+                                                      child: Row(
+                                                        mainAxisSize: MainAxisSize.min,
+                                                        children: [
+                                                          Icon(Icons.swap_horiz_rounded, size: 12, color: const Color(0xFF4F7CFF).withOpacity(0.9)),
+                                                          const SizedBox(width: 4),
+                                                          Text('Migration',
+                                                            style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: const Color(0xFF4F7CFF).withOpacity(0.9))),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 6),
                                                   // Logout button
                                                   GestureDetector(
                                                     onTap: () async {
@@ -742,7 +930,105 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
           // ═══════════════════════════════════════════════
           //  IMMERSIVE CONTROLS (bottom bar + subtitles)
           // ═══════════════════════════════════════════════
-          if (_immersive) ...[
+          // ── Apple TV Player UI ──
+          if (_immersive && _useAppleTVControls) ...[
+            // Double-tap skip zones
+            GestureDetector(
+              onDoubleTapDown: (details) {
+                final sw = screenW;
+                if (details.globalPosition.dx < sw / 3) {
+                  _skipSeconds(-10);
+                } else if (details.globalPosition.dx > sw * 2 / 3) {
+                  _skipSeconds(10);
+                }
+              },
+              onDoubleTap: () {},
+              behavior: HitTestBehavior.translucent,
+              child: const SizedBox.expand(),
+            ),
+
+            // Skip feedback
+            if (_skipFeedback != null)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 140),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(_skipFeedback!,
+                      style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ),
+
+            // Top scrim
+            Positioned(
+              top: 0, left: 0, right: 0,
+              child: IgnorePointer(
+                child: AnimatedOpacity(
+                  opacity: _controlsVisible ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 400),
+                  child: Container(
+                    height: 120,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Colors.black.withOpacity(0.4), Colors.transparent],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // Center controls (Play/Pause + Skip)
+            _buildATVCenterControls(),
+
+            // Top bar (PiP, Volume, Close)
+            _buildATVTopBar(),
+
+            // Transcript overlay
+            if (_txService.isActive && _txService.lines.isNotEmpty)
+              Positioned(
+                left: 0, right: 0, bottom: 110,
+                child: TranscriptOverlay(
+                  lines: _txService.lines,
+                  statusText: _txService.statusText,
+                  isActive: _txService.isActive,
+                ),
+              ),
+
+            // Menu dismiss zone
+            if (_subtitleMenuOpen || _audioLangMenuOpen || _settingsMenuOpen)
+              Positioned.fill(
+                child: GestureDetector(
+                  onTap: () => setState(() {
+                    _subtitleMenuOpen = false;
+                    _audioLangMenuOpen = false;
+                    _settingsMenuOpen = false;
+                  }),
+                  child: Container(color: Colors.transparent),
+                ),
+              ),
+
+            // Dropdown menus — anchored bottom-right
+            if (_subtitleMenuOpen)
+              Positioned(bottom: 100, right: 16, child: _buildATVSubtitleMenu()),
+            if (_audioLangMenuOpen && _videos.isNotEmpty && _videos[_currentIndex].hasLanguagePair)
+              Positioned(bottom: 100, right: 60, child: _buildATVAudioMenu()),
+            if (_settingsMenuOpen)
+              Positioned(bottom: 100, right: 16, child: _buildATVSettingsMenu()),
+
+            // Bottom bar (title + seekbar + icons)
+            _buildATVBottomBar(),
+          ]
+
+          // ── Netflix-style controls (backup, disabled by flag) ──
+          else if (_immersive) ...[
             // Double-tap skip zones
             GestureDetector(
               onDoubleTapDown: (details) {
@@ -772,48 +1058,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
                 ),
               ),
 
-            // Top controls (close, transcription, language)
+            // ── Top scrim (subtle, for close button contrast) ──
             Positioned(
               top: 0, left: 0, right: 0,
-              child: AnimatedOpacity(
-                opacity: _controlsVisible ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 400),
-                child: IgnorePointer(
-                  ignoring: !_controlsVisible,
-                  child: SafeArea(
-                    bottom: false,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                      child: Row(
-                        children: [
-                          // Close / ESC
-                          _immersiveBtn(Icons.close, onTap: _exitImmersive),
-                          const Spacer(),
-                          // Transcription toggle
-                          _immersiveBtn(
-                            Icons.subtitles_outlined,
-                            active: _txService.isActive,
-                            onTap: _toggleTranscription,
-                          ),
-                          const SizedBox(width: 8),
-                          // Language selector
-                          _immersiveBtn(
-                            Icons.translate,
-                            onTap: () => setState(() => _langMenuOpen = !_langMenuOpen),
-                          ),
-                          const SizedBox(width: 8),
-                          // Mute in immersive
-                          _immersiveBtn(
-                            _muted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
-                            onTap: () {
-                              setState(() => _muted = !_muted);
-                              if (_muted) {
-                                _heroPlayerStateKey.currentState?.mute();
-                              } else {
-                                _heroPlayerStateKey.currentState?.unMute();
-                              }
-                            },
-                          ),
+              child: IgnorePointer(
+                child: AnimatedOpacity(
+                  opacity: _controlsVisible ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 400),
+                  child: Container(
+                    height: 100,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.4),
+                          Colors.transparent,
                         ],
                       ),
                     ),
@@ -822,20 +1082,43 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
               ),
             ),
 
-            // Language dropdown
-            if (_langMenuOpen)
-              Positioned(
-                top: 70, right: 80,
-                child: SafeArea(
-                  child: _buildLanguageMenu(),
+            // ── Close button — top right only ──
+            Positioned(
+              top: 0, right: 0,
+              child: AnimatedOpacity(
+                opacity: _controlsVisible ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 400),
+                child: IgnorePointer(
+                  ignoring: !_controlsVisible,
+                  child: SafeArea(
+                    bottom: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(0, 12, 16, 0),
+                      child: _controlIcon(Icons.close, onTap: _exitImmersive),
+                    ),
+                  ),
                 ),
               ),
+            ),
 
-            // Transcript overlay — only when we have our own lines (RTMP/Whisper)
-            // YouTube native CC is rendered inside the iframe, no overlay needed
+            // ── Language dropdown (anchored above bottom bar) ──
+            if (_langMenuOpen)
+              Positioned(
+                bottom: 80, left: 12,
+                child: _buildLanguageMenu(),
+              ),
+
+            // ── Audio-language dropdown ──
+            if (_audioLangMenuOpen && _videos.isNotEmpty && _videos[_currentIndex].hasLanguagePair)
+              Positioned(
+                bottom: 80, left: 60,
+                child: _buildAudioLangMenu(_videos[_currentIndex]),
+              ),
+
+            // ── Transcript overlay ──
             if (_txService.isActive && _txService.lines.isNotEmpty)
               Positioned(
-                left: 0, right: 0, bottom: 60,
+                left: 0, right: 0, bottom: 90,
                 child: TranscriptOverlay(
                   lines: _txService.lines,
                   statusText: _txService.statusText,
@@ -843,7 +1126,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
                 ),
               ),
 
-            // Bottom controls: play/pause + seekbar + time + speed
+            // ═══════════════════════════════════════════════
+            //  UNIFIED BOTTOM CONTROL BAR (Netflix-style)
+            // ═══════════════════════════════════════════════
             Positioned(
               left: 0, right: 0, bottom: 0,
               child: AnimatedOpacity(
@@ -851,53 +1136,128 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
                 duration: const Duration(milliseconds: 400),
                 child: IgnorePointer(
                   ignoring: !_controlsVisible,
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, Colors.black.withOpacity(0.6)],
+                  child: SafeArea(
+                    top: false,
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(12, 20, 12, 8),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
+                          stops: const [0.0, 0.4],
+                        ),
                       ),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Seekbar
-                        _buildSeekableProgressBar(),
-                        const SizedBox(height: 8),
-                        // Controls row
-                        Row(
-                          children: [
-                            // Play/Pause
-                            GestureDetector(
-                              onTap: () {
-                                _heroPlayerStateKey.currentState?.togglePlayPause();
-                                setState(() {});
-                              },
-                              child: Icon(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Seekbar (full width, expands on touch)
+                          _buildSeekableProgressBar(),
+                          const SizedBox(height: 4),
+                          // Controls row
+                          Row(
+                            children: [
+                              // ── LEFT GROUP ──
+                              // CC toggle
+                              Tooltip(
+                                message: (_availableCaptionLangs != null &&
+                                        _availableCaptionLangs!.isEmpty)
+                                    ? 'Derzeit noch keine automatisch erzeugten Untertitel vorhanden. YouTube stellt diese meist wenige Stunden nach dem Upload bereit.'
+                                    : 'Untertitel ein-/ausschalten',
+                                waitDuration: const Duration(milliseconds: 300),
+                                textStyle: GoogleFonts.inter(fontSize: 12, color: Colors.white),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.85),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.white.withOpacity(0.2)),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                child: Opacity(
+                                  opacity: (_availableCaptionLangs != null &&
+                                          _availableCaptionLangs!.isEmpty)
+                                      ? 0.55
+                                      : 1.0,
+                                  child: _controlIcon(
+                                    (_availableCaptionLangs != null &&
+                                            _availableCaptionLangs!.isEmpty)
+                                        ? Icons.subtitles_off_outlined
+                                        : Icons.subtitles_outlined,
+                                    active: !_ytCaptionsManuallyOff || _txService.isActive,
+                                    onTap: _toggleTranscription,
+                                  ),
+                                ),
+                              ),
+                              // Audio language pill (if paired)
+                              if (_videos.isNotEmpty &&
+                                  _videos[_currentIndex].hasLanguagePair)
+                                _buildAudioLangPill(_videos[_currentIndex]),
+                              // Translate language selector
+                              if (_availableCaptionLangs != null &&
+                                  _availableCaptionLangs!.isNotEmpty)
+                                _controlIcon(
+                                  Icons.translate,
+                                  onTap: () => setState(() => _langMenuOpen = !_langMenuOpen),
+                                ),
+                              // Mute
+                              _controlIcon(
+                                _muted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                                onTap: () {
+                                  setState(() => _muted = !_muted);
+                                  if (_muted) {
+                                    _heroPlayerStateKey.currentState?.mute();
+                                  } else {
+                                    _heroPlayerStateKey.currentState?.unMute();
+                                  }
+                                },
+                              ),
+
+                              const Spacer(),
+
+                              // ── CENTER: Play/Pause ──
+                              _controlIcon(
                                 (_heroPlayerStateKey.currentState?.isPaused ?? false)
                                     ? Icons.play_arrow_rounded
                                     : Icons.pause_rounded,
-                                color: Colors.white, size: 28,
+                                onTap: () {
+                                  _heroPlayerStateKey.currentState?.togglePlayPause();
+                                  setState(() {});
+                                },
+                                size: 36,
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            // Time
-                            Text(
-                              '${_formatTime(_progressFraction * _totalDuration)} / ${_formatTime(_totalDuration)}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.white.withOpacity(0.7),
-                                fontFeatures: const [FontFeature.tabularFigures()],
+
+                              const Spacer(),
+
+                              // ── RIGHT GROUP ──
+                              // Time display
+                              Text(
+                                '${_formatTime(_progressFraction * _totalDuration)} / ${_formatTime(_totalDuration)}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white.withOpacity(0.7),
+                                  fontFeatures: const [FontFeature.tabularFigures()],
+                                  shadows: const [Shadow(color: Colors.black87, blurRadius: 4)],
+                                ),
                               ),
-                            ),
-                            const Spacer(),
-                            // Speed selector
-                            _buildSpeedSelector(),
-                          ],
-                        ),
-                      ],
+                              const SizedBox(width: 8),
+                              // Speed
+                              _buildSpeedSelector(),
+                              const SizedBox(width: 4),
+                              // Fullscreen
+                              _controlIcon(
+                                YouTubeHeroPlayerState.isFullscreen
+                                    ? Icons.fullscreen_exit_rounded
+                                    : Icons.fullscreen_rounded,
+                                onTap: () {
+                                  YouTubeHeroPlayerState.toggleFullscreen();
+                                  Future.delayed(const Duration(milliseconds: 150), () {
+                                    if (mounted) setState(() {});
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -950,17 +1310,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
     final speeds = [0.5, 1.0, 1.25, 1.5, 2.0];
     return GestureDetector(
       onTap: () {
-        // Cycle through speeds
         final currentIdx = speeds.indexOf(_playbackSpeed);
         final nextIdx = (currentIdx + 1) % speeds.length;
         setState(() => _playbackSpeed = speeds[nextIdx]);
         _heroPlayerStateKey.currentState?.setPlaybackRate(_playbackSpeed);
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          color: Colors.white.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: Colors.white.withOpacity(0.5), width: 1),
         ),
         child: Text(
           '${_playbackSpeed}x',
@@ -968,6 +1327,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
             fontSize: 12,
             fontWeight: FontWeight.w600,
             color: Colors.white,
+            shadows: const [Shadow(color: Colors.black87, blurRadius: 4)],
           ),
         ),
       ),
@@ -1056,19 +1416,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
 
     return SizedBox(
       height: cardHeight,
-      child: Center(
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          physics: const BouncingScrollPhysics(),
-          child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(videos.length * 2 - 1, (i) {
-                if (i.isOdd) return const SizedBox(width: 30);
-                final videoIndex = i ~/ 2;
-                final video = videos[videoIndex];
-                return _buildSingleCard(video, videoIndex, cardWidth, cardHeight);
-              }),
-          ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: List.generate(videos.length * 2 - 1, (i) {
+            if (i.isOdd) return const SizedBox(width: 30);
+            final videoIndex = i ~/ 2;
+            final video = videos[videoIndex];
+            return _buildSingleCard(video, videoIndex, cardWidth, cardHeight);
+          }),
         ),
       ),
     );
@@ -1278,19 +1636,128 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
     );
   }
 
-  Widget _immersiveBtn(IconData icon, {VoidCallback? onTap, bool active = false}) {
+  Widget _controlIcon(IconData icon, {VoidCallback? onTap, bool active = false, double size = 24}) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: 44, height: 44,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: active ? Colors.white.withOpacity(0.25) : Colors.white.withOpacity(0.12),
-          border: Border.all(
-            color: active ? TertiusTheme.yellow.withOpacity(0.6) : Colors.white.withOpacity(0.2),
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Icon(
+          icon,
+          color: active ? TertiusTheme.yellow : Colors.white,
+          size: size,
+          shadows: const [
+            Shadow(color: Colors.black87, blurRadius: 6, offset: Offset(0, 1)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Compact pill showing the currently active audio language for paired streams.
+  /// Tap opens the audio-lang menu.
+  Widget _buildAudioLangPill(VideoItem v) {
+    final activeLang =
+        _audioOverrideLang ?? v.primaryLang ?? v.audioVariants!.keys.first;
+    return GestureDetector(
+      onTap: () => setState(() => _audioLangMenuOpen = !_audioLangMenuOpen),
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              activeLang.toUpperCase(),
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                shadows: const [Shadow(color: Colors.black87, blurRadius: 6)],
+              ),
+            ),
+            const SizedBox(width: 2),
+            Icon(Icons.expand_more_rounded,
+                size: 16, color: Colors.white.withOpacity(0.7)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAudioLangMenu(VideoItem v) {
+    final variants = v.audioVariants!;
+    final activeLang =
+        _audioOverrideLang ?? v.primaryLang ?? variants.keys.first;
+    const labels = {
+      'de': 'Deutsch',
+      'en': 'English',
+      'ro': 'Română',
+      'zu': 'isiZulu',
+    };
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: Colors.black.withOpacity(0.72),
+            border: Border.all(color: Colors.white.withOpacity(0.15)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 6),
+                child: Text(
+                  'AUDIO',
+                  style: GoogleFonts.inter(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white.withOpacity(0.5),
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+              ...variants.keys.map((lang) {
+                final active = lang == activeLang;
+                return GestureDetector(
+                  onTap: () => _switchAudioLang(lang),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    color: active ? Colors.white.withOpacity(0.1) : Colors.transparent,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 28,
+                          child: Text(lang.toUpperCase(),
+                            style: GoogleFonts.inter(
+                              fontSize: 12, fontWeight: FontWeight.w700,
+                              color: active ? TertiusTheme.yellow : Colors.white.withOpacity(0.6),
+                            )),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(labels[lang] ?? lang,
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: active ? Colors.white : Colors.white.withOpacity(0.7),
+                          )),
+                        if (active) ...[
+                          const SizedBox(width: 12),
+                          Icon(Icons.check, size: 14, color: TertiusTheme.yellow),
+                        ],
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ],
           ),
         ),
-        child: Icon(icon, color: active ? TertiusTheme.yellow : Colors.white, size: 20),
       ),
     );
   }
@@ -1309,7 +1776,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: TranscriptionService.availableLanguages.map((lang) {
+            children: TranscriptionService.availableLanguages
+                .where((lang) =>
+                    _availableCaptionLangs == null ||
+                    _availableCaptionLangs!.contains(lang))
+                .map((lang) {
               final active = _txService.targetLang == lang;
               return GestureDetector(
                 onTap: () {
@@ -1355,52 +1826,74 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
     return LayoutBuilder(
       builder: (context, constraints) {
         final barWidth = constraints.maxWidth;
-        return GestureDetector(
-          onTapDown: (details) {
-            _seekTo((details.localPosition.dx / barWidth).clamp(0.0, 1.0));
-          },
-          onHorizontalDragUpdate: (details) {
-            _seekTo((details.localPosition.dx / barWidth).clamp(0.0, 1.0));
-          },
-          child: Container(
-            height: 32,
-            alignment: Alignment.center,
-            child: Stack(
-              alignment: Alignment.centerLeft,
-              children: [
-                // Background track
-                Container(
-                  height: 4,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(2),
-                    color: Colors.white.withOpacity(0.3),
-                  ),
-                ),
-                // Progress fill
-                FractionallySizedBox(
-                  widthFactor: _progressFraction.clamp(0.0, 1.0),
-                  child: Container(
-                    height: 4,
+        final trackH = _seekbarExpanded ? 12.0 : 6.0;
+        return MouseRegion(
+          onEnter: (_) => setState(() => _seekbarExpanded = true),
+          onExit: (_) => setState(() => _seekbarExpanded = false),
+          child: GestureDetector(
+            onTapDown: (d) {
+              setState(() => _seekbarExpanded = true);
+              _seekTo((d.localPosition.dx / barWidth).clamp(0.0, 1.0));
+            },
+            onHorizontalDragStart: (_) {
+              setState(() => _seekbarExpanded = true);
+              _controlsHideTimer?.cancel();
+            },
+            onHorizontalDragUpdate: (d) {
+              _seekTo((d.localPosition.dx / barWidth).clamp(0.0, 1.0));
+            },
+            onHorizontalDragEnd: (_) {
+              setState(() => _seekbarExpanded = false);
+              _startControlsAutoHide();
+            },
+            child: Container(
+              height: 40,
+              alignment: Alignment.center,
+              child: Stack(
+                alignment: Alignment.centerLeft,
+                clipBehavior: Clip.none,
+                children: [
+                  // Background track
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    curve: Curves.easeOut,
+                    height: trackH,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(2),
-                      color: TertiusTheme.live,
+                      borderRadius: BorderRadius.circular(trackH / 2),
+                      color: Colors.white.withOpacity(0.3),
                     ),
                   ),
-                ),
-                // Dot at current position
-                Positioned(
-                  left: (barWidth * _progressFraction.clamp(0.0, 1.0)) - 6,
-                  child: Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white,
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 4)],
+                  // Progress fill
+                  FractionallySizedBox(
+                    widthFactor: _progressFraction.clamp(0.0, 1.0),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      height: trackH,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(trackH / 2),
+                        color: TertiusTheme.live,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                  // Thumb — visible only on hover / touch
+                  Positioned(
+                    left: (barWidth * _progressFraction.clamp(0.0, 1.0)) - 8,
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 150),
+                      opacity: _seekbarExpanded ? 1.0 : 0.0,
+                      child: Container(
+                        width: 16,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: TertiusTheme.live,
+                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.45), blurRadius: 4)],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -1409,10 +1902,466 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
   }
 
   String _formatTime(double seconds) {
-    final m = (seconds / 60).floor();
+    if (seconds < 0) seconds = 0;
+    final h = (seconds / 3600).floor();
+    final m = ((seconds % 3600) / 60).floor();
     final s = (seconds % 60).floor();
+    if (h > 0) return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
     return '$m:${s.toString().padLeft(2, '0')}';
   }
+
+  String _formatRemainingTime(double current, double total) {
+    final rem = total - current;
+    if (rem <= 0) return '-0:00';
+    final h = (rem / 3600).floor();
+    final m = ((rem % 3600) / 60).floor();
+    final s = (rem % 60).floor();
+    if (h > 0) return '-$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    return '-$m:${s.toString().padLeft(2, '0')}';
+  }
+
+  // ─── Apple TV Helper: icon button ───
+  Widget _atvIcon(IconData icon, {VoidCallback? onTap, double size = 22, double opacity = 0.8}) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Icon(icon, color: Colors.white.withOpacity(opacity), size: size),
+      ),
+    );
+  }
+
+  // ─── Apple TV: Center Controls (Play/Pause + Skip ±10s) ───
+  Widget _buildATVCenterControls() {
+    final compact = MediaQuery.of(context).size.width < 600;
+    final playSize = compact ? 64.0 : 80.0;
+    final skipSize = compact ? 40.0 : 50.0;
+    final playIconSize = compact ? 36.0 : 44.0;
+    final skipIconSize = compact ? 22.0 : 28.0;
+    return Center(
+      child: AnimatedOpacity(
+        opacity: _controlsVisible ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 400),
+        child: IgnorePointer(
+          ignoring: !_controlsVisible,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Skip -10s
+              GestureDetector(
+                onTap: () { _skipSeconds(-10); _showControls(); },
+                child: Container(
+                  width: skipSize, height: skipSize,
+                  decoration: const BoxDecoration(shape: BoxShape.circle, color: TertiusTheme.atvButtonBg),
+                  child: Icon(Icons.replay_10_rounded, size: skipIconSize, color: Colors.white),
+                ),
+              ),
+              SizedBox(width: compact ? 28 : 40),
+              // Play/Pause
+              GestureDetector(
+                onTap: () { _heroPlayerStateKey.currentState?.togglePlayPause(); setState(() {}); _showControls(); },
+                child: Container(
+                  width: playSize, height: playSize,
+                  decoration: const BoxDecoration(shape: BoxShape.circle, color: TertiusTheme.atvButtonBg),
+                  child: Icon(
+                    (_heroPlayerStateKey.currentState?.isPaused ?? false) ? Icons.play_arrow_rounded : Icons.pause_rounded,
+                    size: playIconSize, color: Colors.white,
+                  ),
+                ),
+              ),
+              SizedBox(width: compact ? 28 : 40),
+              // Skip +10s
+              GestureDetector(
+                onTap: () { _skipSeconds(10); _showControls(); },
+                child: Container(
+                  width: skipSize, height: skipSize,
+                  decoration: const BoxDecoration(shape: BoxShape.circle, color: TertiusTheme.atvButtonBg),
+                  child: Icon(Icons.forward_10_rounded, size: skipIconSize, color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── Apple TV: Seekbar ───
+  Widget _buildATVSeekbar() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final barWidth = constraints.maxWidth;
+        final trackH = _seekbarExpanded ? 6.0 : 3.0;
+        final thumbSize = _seekbarExpanded ? 14.0 : 10.0;
+        return MouseRegion(
+          onEnter: (_) => setState(() => _seekbarExpanded = true),
+          onExit: (_) => setState(() => _seekbarExpanded = false),
+          child: GestureDetector(
+            onTapDown: (d) {
+              setState(() => _seekbarExpanded = true);
+              _seekTo((d.localPosition.dx / barWidth).clamp(0.0, 1.0));
+            },
+            onHorizontalDragStart: (_) {
+              setState(() => _seekbarExpanded = true);
+              _controlsHideTimer?.cancel();
+            },
+            onHorizontalDragUpdate: (d) {
+              _seekTo((d.localPosition.dx / barWidth).clamp(0.0, 1.0));
+            },
+            onHorizontalDragEnd: (_) {
+              setState(() => _seekbarExpanded = false);
+              _startControlsAutoHide();
+            },
+            child: Container(
+              height: 32,
+              alignment: Alignment.center,
+              child: Stack(
+                alignment: Alignment.centerLeft,
+                clipBehavior: Clip.none,
+                children: [
+                  // Background track
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    curve: Curves.easeOut,
+                    height: trackH,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(trackH / 2),
+                      color: Colors.white.withOpacity(0.3),
+                    ),
+                  ),
+                  // Progress fill
+                  FractionallySizedBox(
+                    widthFactor: _progressFraction.clamp(0.0, 1.0),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      height: trackH,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(trackH / 2),
+                        color: TertiusTheme.live,
+                      ),
+                    ),
+                  ),
+                  // Thumb — always visible
+                  Positioned(
+                    left: (barWidth * _progressFraction.clamp(0.0, 1.0)) - thumbSize / 2,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      width: thumbSize,
+                      height: thumbSize,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.4), blurRadius: 4)],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ─── Apple TV: Bottom Bar ───
+  Widget _buildATVBottomBar() {
+    final v = _videos.isNotEmpty ? _videos[_currentIndex] : null;
+    final current = _progressFraction * _totalDuration;
+    return Positioned(
+      left: 0, right: 0, bottom: 0,
+      child: AnimatedOpacity(
+        opacity: _controlsVisible ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 400),
+        child: IgnorePointer(
+          ignoring: !_controlsVisible,
+          child: SafeArea(
+            top: false,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Colors.black.withOpacity(0.75)],
+                  stops: const [0.0, 0.5],
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Row 1: metadata left, icons right
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      // Title + year
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (v?.published != null)
+                              Text(
+                                v!.published!,
+                                style: GoogleFonts.inter(fontSize: 13, color: TertiusTheme.atvTextSecondary),
+                              ),
+                            const SizedBox(height: 2),
+                            Text(
+                              v?.title ?? '',
+                              style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
+                              maxLines: 1, overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Right icons
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Subtitles
+                          _atvIcon(
+                            (_ytCaptionsManuallyOff && !_txService.isActive)
+                                ? Icons.subtitles_off_outlined
+                                : Icons.subtitles_outlined,
+                            onTap: () => setState(() {
+                              _subtitleMenuOpen = !_subtitleMenuOpen;
+                              _audioLangMenuOpen = false;
+                              _settingsMenuOpen = false;
+                            }),
+                          ),
+                          const SizedBox(width: 4),
+                          // Audio / language (if paired)
+                          if (v != null && v.hasLanguagePair)
+                            _atvIcon(Icons.translate, onTap: () => setState(() {
+                              _audioLangMenuOpen = !_audioLangMenuOpen;
+                              _subtitleMenuOpen = false;
+                              _settingsMenuOpen = false;
+                            })),
+                          const SizedBox(width: 4),
+                          // Settings (speed)
+                          _atvIcon(Icons.settings_outlined, onTap: () => setState(() {
+                            _settingsMenuOpen = !_settingsMenuOpen;
+                            _subtitleMenuOpen = false;
+                            _audioLangMenuOpen = false;
+                          })),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Row 2: time + seekbar + remaining time
+                  Row(
+                    children: [
+                      Text(
+                        _formatTime(current),
+                        style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.7),
+                          fontFeatures: const [FontFeature.tabularFigures()]),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(child: _buildATVSeekbar()),
+                      const SizedBox(width: 10),
+                      Text(
+                        _formatRemainingTime(current, _totalDuration),
+                        style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.7),
+                          fontFeatures: const [FontFeature.tabularFigures()]),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── Apple TV: Top Bar ───
+  Widget _buildATVTopBar() {
+    return Positioned(
+      top: 0, left: 0, right: 0,
+      child: AnimatedOpacity(
+        opacity: _controlsVisible ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 400),
+        child: IgnorePointer(
+          ignoring: !_controlsVisible,
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  // Left: Fullscreen
+                  // TODO Sprint 3: PiP + AirPlay when migrating to own video stream
+                  // (cross-origin YouTube iframes block PiP/AirPlay JS APIs)
+                  // Fullscreen toggle
+                  _atvIcon(
+                    YouTubeHeroPlayerState.isFullscreen
+                        ? Icons.fullscreen_exit_rounded
+                        : Icons.fullscreen_rounded,
+                    onTap: () {
+                      YouTubeHeroPlayerState.toggleFullscreen();
+                      Future.delayed(const Duration(milliseconds: 150), () {
+                        if (mounted) setState(() {});
+                      });
+                    },
+                  ),
+                  const Spacer(),
+                  // Right: Volume + Close
+                  _atvIcon(
+                    _muted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                    onTap: () {
+                      setState(() => _muted = !_muted);
+                      if (_muted) { _heroPlayerStateKey.currentState?.mute(); }
+                      else { _heroPlayerStateKey.currentState?.unMute(); }
+                    },
+                  ),
+                  const SizedBox(width: 4),
+                  _atvIcon(Icons.close, onTap: _exitImmersive),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── Apple TV: Subtitle Menu ───
+  Widget _buildATVSubtitleMenu() {
+    final langs = _availableCaptionLangs ?? [];
+    const labels = {'de': 'Deutsch', 'en': 'English', 'ru': 'Русский', 'zu': 'isiZulu', 'ro': 'Română'};
+    final activeLang = AppConstants.defaultLanguage;
+    final captionsOn = !_ytCaptionsManuallyOff || _txService.isActive;
+    return Container(
+      width: 240,
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        color: TertiusTheme.atvMenuBg,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+            child: Text('Untertitel', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: TertiusTheme.atvTextSecondary)),
+          ),
+          // On/Off toggle
+          _atvMenuItem(
+            label: captionsOn ? 'Ein' : 'Aus',
+            selected: !captionsOn,
+            onTap: () { _toggleTranscription(); setState(() => _subtitleMenuOpen = false); },
+          ),
+          if (captionsOn && langs.isNotEmpty) ...[
+            const Divider(color: Colors.white12, height: 1),
+            for (final lang in langs)
+              _atvMenuItem(
+                label: labels[lang] ?? lang.toUpperCase(),
+                selected: activeLang == lang,
+                onTap: () {
+                  _txService.setLanguage(lang);
+                  _heroPlayerStateKey.currentState?.setCaptions(true, lang: lang);
+                  setState(() => _subtitleMenuOpen = false);
+                },
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ─── Apple TV: Audio Menu ───
+  Widget _buildATVAudioMenu() {
+    if (_videos.isEmpty) return const SizedBox.shrink();
+    final v = _videos[_currentIndex];
+    if (!v.hasLanguagePair) return const SizedBox.shrink();
+    final variants = v.audioVariants!;
+    final activeLang = _audioOverrideLang ?? v.primaryLang ?? variants.keys.first;
+    const labels = {'de': 'Deutsch', 'en': 'English', 'ro': 'Română', 'zu': 'isiZulu'};
+    return Container(
+      width: 240,
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        color: TertiusTheme.atvMenuBg,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+            child: Text('Audio', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: TertiusTheme.atvTextSecondary)),
+          ),
+          for (final lang in variants.keys)
+            _atvMenuItem(
+              label: labels[lang] ?? lang.toUpperCase(),
+              selected: lang == activeLang,
+              onTap: () { _switchAudioLang(lang); setState(() => _audioLangMenuOpen = false); },
+            ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Apple TV: Settings / Speed Menu ───
+  Widget _buildATVSettingsMenu() {
+    final speeds = [0.5, 1.0, 1.25, 1.5, 2.0];
+    return Container(
+      width: 200,
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        color: TertiusTheme.atvMenuBg,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+            child: Text('Geschwindigkeit', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: TertiusTheme.atvTextSecondary)),
+          ),
+          for (final speed in speeds)
+            _atvMenuItem(
+              label: '${speed}x',
+              selected: _playbackSpeed == speed,
+              onTap: () {
+                setState(() { _playbackSpeed = speed; _settingsMenuOpen = false; });
+                _heroPlayerStateKey.currentState?.setPlaybackRate(speed);
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Apple TV: Menu Item ───
+  Widget _atvMenuItem({required String label, required bool selected, VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        color: selected ? TertiusTheme.atvMenuSelected.withOpacity(0.2) : Colors.transparent,
+        child: Row(
+          children: [
+            if (selected)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Icon(Icons.check, size: 16, color: TertiusTheme.atvMenuSelected),
+              ),
+            Text(label, style: GoogleFonts.inter(fontSize: 15, color: Colors.white, fontWeight: selected ? FontWeight.w600 : FontWeight.w400)),
+          ],
+        ),
+      ),
+    );
+  }
+
 }
 
 // ═══════════════════════════════════════════════════════
