@@ -253,8 +253,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
   /// Preserves playback position so the swap feels like a pure audio switch.
   void _switchAudioLang(String lang) {
     if (_videos.isEmpty) return;
+    // TODO: re-enable when audioVariants API is deployed
+    return;
+    // ignore: dead_code
     final v = _videos[_currentIndex];
-    final variants = v.audioVariants;
+    final Map<String, String>? variants = null;
     if (variants == null || !variants.containsKey(lang)) return;
     final newVideoId = variants[lang]!;
     final currentActive = _audioOverrideVideoId ?? v.videoId;
@@ -1018,7 +1021,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
             // Dropdown menus — anchored bottom-right
             if (_subtitleMenuOpen)
               Positioned(bottom: 100, right: 16, child: _buildATVSubtitleMenu()),
-            if (_audioLangMenuOpen && _videos.isNotEmpty && _videos[_currentIndex].hasLanguagePair)
+            if (_audioLangMenuOpen && _videos.isNotEmpty && false /* hasLanguagePair — needs audioVariants API */)
               Positioned(bottom: 100, right: 60, child: _buildATVAudioMenu()),
             if (_settingsMenuOpen)
               Positioned(bottom: 100, right: 16, child: _buildATVSettingsMenu()),
@@ -1109,7 +1112,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
               ),
 
             // ── Audio-language dropdown ──
-            if (_audioLangMenuOpen && _videos.isNotEmpty && _videos[_currentIndex].hasLanguagePair)
+            if (_audioLangMenuOpen && _videos.isNotEmpty && false /* hasLanguagePair — needs audioVariants API */)
               Positioned(
                 bottom: 80, left: 60,
                 child: _buildAudioLangMenu(_videos[_currentIndex]),
@@ -1189,7 +1192,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
                               ),
                               // Audio language pill (if paired)
                               if (_videos.isNotEmpty &&
-                                  _videos[_currentIndex].hasLanguagePair)
+                                  false /* hasLanguagePair — needs audioVariants API */)
                                 _buildAudioLangPill(_videos[_currentIndex]),
                               // Translate language selector
                               if (_availableCaptionLangs != null &&
@@ -1657,8 +1660,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
   /// Compact pill showing the currently active audio language for paired streams.
   /// Tap opens the audio-lang menu.
   Widget _buildAudioLangPill(VideoItem v) {
+    // TODO: re-enable when audioVariants API is deployed
+    return const SizedBox.shrink();
+    // ignore: dead_code
     final activeLang =
-        _audioOverrideLang ?? v.primaryLang ?? v.audioVariants!.keys.first;
+        _audioOverrideLang ?? 'de';
     return GestureDetector(
       onTap: () => setState(() => _audioLangMenuOpen = !_audioLangMenuOpen),
       behavior: HitTestBehavior.opaque,
@@ -1686,9 +1692,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
   }
 
   Widget _buildAudioLangMenu(VideoItem v) {
-    final variants = v.audioVariants!;
-    final activeLang =
-        _audioOverrideLang ?? v.primaryLang ?? variants.keys.first;
+    // TODO: re-enable when audioVariants API is deployed
+    return const SizedBox.shrink();
+    // ignore: dead_code
+    final variants = <String, String>{};
+    final activeLang = _audioOverrideLang ?? 'de';
     const labels = {
       'de': 'Deutsch',
       'en': 'English',
@@ -2132,7 +2140,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
                           ),
                           const SizedBox(width: 4),
                           // Audio / language (if paired)
-                          if (v != null && v.hasLanguagePair)
+                          if (v != null && false /* hasLanguagePair */)
                             _atvIcon(Icons.translate, onTap: () => setState(() {
                               _audioLangMenuOpen = !_audioLangMenuOpen;
                               _subtitleMenuOpen = false;
@@ -2277,9 +2285,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
   Widget _buildATVAudioMenu() {
     if (_videos.isEmpty) return const SizedBox.shrink();
     final v = _videos[_currentIndex];
-    if (!v.hasLanguagePair) return const SizedBox.shrink();
-    final variants = v.audioVariants!;
-    final activeLang = _audioOverrideLang ?? v.primaryLang ?? variants.keys.first;
+    // TODO: re-enable when audioVariants API is deployed
+    return const SizedBox.shrink();
+    // ignore: dead_code
+    final variants = <String, String>{};
+    final activeLang = _audioOverrideLang ?? 'de';
     const labels = {'de': 'Deutsch', 'en': 'English', 'ro': 'Română', 'zu': 'isiZulu'};
     return Container(
       width: 240,

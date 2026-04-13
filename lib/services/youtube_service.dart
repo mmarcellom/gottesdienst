@@ -165,7 +165,58 @@ class YouTubeService {
     ];
   }
 
+  // ═══════════════════════════════════════════════════════
+  //  VIDEO STREAM URL (for HTML5 <video>)
+  // ═══════════════════════════════════════════════════════
+
+  final Map<String, _StreamUrlCache> _streamUrlCache = {};
+  static const _streamUrlTtl = Duration(hours: 3);
+
+  /// Get a direct MP4 stream URL for the given video ID.
+  /// Uses the /api/video-stream endpoint (youtubei.js on Vercel).
+  /// Caches URLs for 3 hours (YouTube URLs expire after ~6h).
+  Future<String?> getVideoStreamUrl(String videoId) async {
+    // Check cache
+    final cached = _streamUrlCache[videoId];
+    if (cached != null && DateTime.now().isBefore(cached.expires)) {
+      return cached.url;
+    }
+
+    try {
+      final res = await http.get(
+        Uri.parse('${AppConstants.baseUrl}/api/video-stream?videoId=$videoId'),
+      ).timeout(const Duration(seconds: 10));
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        final url = data['streamUrl'] as String?;
+        if (url != null && url.isNotEmpty) {
+          _streamUrlCache[videoId] = _StreamUrlCache(
+            url: url,
+            expires: DateTime.now().add(_streamUrlTtl),
+          );
+          return url;
+        }
+      }
+    } catch (e) {
+      debugPrint('[YT] Failed to get stream URL for $videoId: $e');
+    }
+
+    return null;
+  }
+
+  /// Clear cached stream URL (e.g., on 403/expiration error)
+  void clearStreamUrlCache(String videoId) {
+    _streamUrlCache.remove(videoId);
+  }
+
   void dispose() {
     _yt.close();
   }
+}
+
+class _StreamUrlCache {
+  final String url;
+  final DateTime expires;
+  _StreamUrlCache({required this.url, required this.expires});
 }
