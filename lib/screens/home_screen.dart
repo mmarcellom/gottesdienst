@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:js' as js;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -51,6 +52,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
   bool _seekbarExpanded = false;
   bool _subtitleMenuOpen = false;
   bool _settingsMenuOpen = false;
+  bool _radioPlaying = false;
 
   // Hero player key — changes to force rebuild when switching videos
   Key _heroPlayerKey = UniqueKey();
@@ -482,6 +484,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             _buildContentSection('Live in This Week', _videos, 200, 275),
+                            const SizedBox(height: 49),
+                            // ── Radio Khwezi ──
+                            _buildRadioKhweziSection(),
                             const SizedBox(height: 49),
                             _buildContentSection('Recommended', _videos.reversed.toList(), 200, 275),
                           ],
@@ -1293,6 +1298,138 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
         },
       ),
     );
+  }
+
+  // ─── Radio Khwezi ───
+  static const _khweziShows = [
+    {'name': 'Vuka Nathi', 'sub': 'Breakfast · Mo-Fr 07:00', 'color': 0xFFE8A317},
+    {'name': 'Sakha Isizwe', 'sub': 'Talk · Mo-Fr 19:30', 'color': 0xFF4F7CFF},
+    {'name': 'Siphetha Isonto', 'sub': 'Gospel · Sa 10:00', 'color': 0xFF52C07A},
+    {'name': 'Sivuselela Ithemba', 'sub': 'Devotional · So 06:00', 'color': 0xFFCF6FD0},
+    {'name': 'Sports Zone', 'sub': 'Sport · Mo-Fr 18:00', 'color': 0xFFE05252},
+    {'name': 'German Hour', 'sub': 'Deutsch · Weekly', 'color': 0xFF3BAFDA},
+  ];
+
+  Widget _buildRadioKhweziSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 25),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(bottom: 16),
+            child: Text('Radio Khwezi',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white)),
+          ),
+          // Live player card
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
+                colors: [const Color(0xFF2A3C52), const Color(0xFF1D2B3A).withOpacity(0.9)]),
+              border: Border.all(color: Colors.white.withOpacity(0.08)),
+            ),
+            child: Row(
+              children: [
+                Container(width: 64, height: 64,
+                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(14),
+                    color: const Color(0xFFE8A317).withOpacity(0.15),
+                    border: Border.all(color: const Color(0xFFE8A317).withOpacity(0.3))),
+                  child: const Icon(Icons.radio_rounded, size: 30, color: Color(0xFFE8A317)),
+                ),
+                const SizedBox(width: 16),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Radio Khwezi', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
+                  const SizedBox(height: 4),
+                  Text(_radioPlaying ? 'Live Stream' : 'isiZulu Community Radio',
+                    style: GoogleFonts.inter(fontSize: 13, color: Colors.white.withOpacity(0.6))),
+                  if (_radioPlaying)
+                    Padding(padding: const EdgeInsets.only(top: 6), child: Row(children: [
+                      Container(width: 8, height: 8, decoration: const BoxDecoration(shape: BoxShape.circle, color: TertiusTheme.live)),
+                      const SizedBox(width: 6),
+                      Text('LIVE', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: TertiusTheme.live, letterSpacing: 0.5)),
+                    ])),
+                ])),
+                GestureDetector(
+                  onTap: _toggleRadioKhwezi,
+                  child: Container(width: 48, height: 48,
+                    decoration: BoxDecoration(shape: BoxShape.circle,
+                      color: _radioPlaying ? TertiusTheme.live.withOpacity(0.15) : Colors.white.withOpacity(0.1),
+                      border: Border.all(color: _radioPlaying ? TertiusTheme.live.withOpacity(0.4) : Colors.white.withOpacity(0.2))),
+                    child: Icon(_radioPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded,
+                      color: _radioPlaying ? TertiusTheme.live : Colors.white, size: 28),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Show cards
+          SizedBox(
+            height: 140,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              itemCount: _khweziShows.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 12),
+              itemBuilder: (context, i) {
+                final show = _khweziShows[i];
+                final c = Color(show['color'] as int);
+                return GestureDetector(
+                  onTap: () {
+                    if (!_radioPlaying) _toggleRadioKhwezi();
+                  },
+                  child: Container(
+                    width: 160,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
+                        colors: [c.withOpacity(0.35), c.withOpacity(0.12)]),
+                      border: Border.all(color: c.withOpacity(0.2)),
+                    ),
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Icon(Icons.podcasts_rounded, size: 28, color: c.withOpacity(0.8)),
+                        const Spacer(),
+                        Text(show['name'] as String,
+                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
+                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 3),
+                        Text(show['sub'] as String,
+                          style: GoogleFonts.inter(fontSize: 11, color: Colors.white.withOpacity(0.55)),
+                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _toggleRadioKhwezi() {
+    if (_radioPlaying) {
+      js.context.callMethod('eval', ['''
+        if (window._khweziAudio) { window._khweziAudio.pause(); window._khweziAudio.src = ''; window._khweziAudio = null; }
+      ''']);
+      setState(() => _radioPlaying = false);
+    } else {
+      // Stop YouTube player if playing
+      _heroPlayerStateKey.currentState?.mute();
+      js.context.callMethod('eval', ['''
+        if (!window._khweziAudio) { window._khweziAudio = new Audio(); }
+        window._khweziAudio.src = 'https://s9.voscast.com:8659/stream';
+        window._khweziAudio.play().catch(function(e) { console.log('Radio play failed:', e); });
+      ''']);
+      setState(() => _radioPlaying = true);
+    }
   }
 
   // ─── Apple TV helper: flat icon button ───
