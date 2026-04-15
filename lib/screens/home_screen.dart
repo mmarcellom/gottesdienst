@@ -482,11 +482,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
                     SliverToBoxAdapter(
                       child: Container(
                         color: const Color(0xFF1D263B),
-                        child: Column(
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final khweziInset = constraints.maxWidth < 600 ? 20.0 : 115.0;
+                            return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Padding(
-                              padding: const EdgeInsets.only(left: 115, bottom: 12),
+                              padding: EdgeInsets.only(left: khweziInset, bottom: 12),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -517,7 +520,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
                                   controller: _khweziScrollController,
                                   scrollDirection: Axis.horizontal,
                                   physics: const NeverScrollableScrollPhysics(),
-                                  padding: const EdgeInsets.only(left: 115),
+                                  padding: EdgeInsets.only(left: khweziInset),
                                   child: Row(
                                     children: List.generate(_khweziShows.length * 2 - 1, (i) {
                                       if (i.isOdd) return const SizedBox(width: 16);
@@ -528,6 +531,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
                               ),
                             ),
                           ],
+                        );
+                          },
                         ),
                       ),
                     ),
