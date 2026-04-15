@@ -1338,46 +1338,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
   ];
 
   Widget _buildRadioKhweziSection() {
-    final khweziCards = List.generate(_khweziShows.length * 2 - 1, (i) {
-      if (i.isOdd) return const SizedBox(width: 16);
-      final show = _khweziShows[i ~/ 2];
-      return GestureDetector(
-        onTap: () => _playLatestEpisode(show['id'] as String),
-        child: SizedBox(
-          width: 200,
-          height: 285,
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(25),
-              border: Border.all(color: Colors.white.withOpacity(0.08)),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Stack(fit: StackFit.expand, children: [
-              Image.asset(show['img'] as String, fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(color: const Color(0xFF2A3C52),
-                  child: const Center(child: Icon(Icons.radio_rounded, size: 40, color: Color(0xFFE8A317))))),
-              Positioned(left: 0, right: 0, bottom: 0, height: 80, child: Container(
-                decoration: BoxDecoration(gradient: LinearGradient(
-                  begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black.withOpacity(0.7)])))),
-              Positioned(left: 12, right: 12, bottom: 14, child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(show['name'] as String,
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
-                    maxLines: 2, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
-                  const SizedBox(height: 3),
-                  Text(show['sub'] as String,
-                    style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.6)),
-                    maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
-                ],
-              )),
-            ]),
-          ),
-        ),
-      );
-    });
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1401,11 +1361,45 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
         ),
         SizedBox(
           height: 285,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            clipBehavior: Clip.none,
-            child: Row(children: khweziCards),
+          child: _FadeEdgeScroller(
+            children: List.generate(_khweziShows.length, (i) {
+              final show = _khweziShows[i];
+              return GestureDetector(
+                onTap: () => _playLatestEpisode(show['id'] as String),
+                child: SizedBox(
+                  width: 200,
+                  height: 285,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(25),
+                      border: Border.all(color: Colors.white.withOpacity(0.08)),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Stack(fit: StackFit.expand, children: [
+                      Image.asset(show['img'] as String, fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(color: const Color(0xFF2A3C52),
+                          child: const Center(child: Icon(Icons.radio_rounded, size: 40, color: Color(0xFFE8A317))))),
+                      Positioned(left: 0, right: 0, bottom: 0, height: 80, child: Container(
+                        decoration: BoxDecoration(gradient: LinearGradient(
+                          begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                          colors: [Colors.transparent, Colors.black.withOpacity(0.7)])))),
+                      Positioned(left: 12, right: 12, bottom: 14, child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(show['name'] as String,
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
+                            maxLines: 2, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
+                          const SizedBox(height: 3),
+                          Text(show['sub'] as String,
+                            style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.6)),
+                            maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
+                        ],
+                      )),
+                    ]),
+                  ),
+                ),
+              );
+            }),
           ),
         ),
       ],
@@ -1690,6 +1684,111 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
     final s = (seconds % 60).floor();
     if (h > 0) return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
     return '$m:${s.toString().padLeft(2, '0')}';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  Fade-Edge Horizontal Scroller
+// ═══════════════════════════════════════════════════════
+
+class _FadeEdgeScroller extends StatefulWidget {
+  final List<Widget> children;
+  const _FadeEdgeScroller({required this.children});
+
+  @override
+  State<_FadeEdgeScroller> createState() => _FadeEdgeScrollerState();
+}
+
+class _FadeEdgeScrollerState extends State<_FadeEdgeScroller> {
+  final _controller = ScrollController();
+  double _leftFade = 0.0;
+  double _rightFade = 1.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_updateFade);
+  }
+
+  void _updateFade() {
+    if (!_controller.hasClients) return;
+    final pos = _controller.position;
+    final max = pos.maxScrollExtent;
+    if (max <= 0) {
+      setState(() { _leftFade = 0; _rightFade = 0; });
+      return;
+    }
+    setState(() {
+      _leftFade = (pos.pixels / 60).clamp(0.0, 1.0);
+      _rightFade = ((max - pos.pixels) / 60).clamp(0.0, 1.0);
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          controller: _controller,
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          child: Row(
+            children: List.generate(widget.children.length * 2 - 1, (i) {
+              if (i.isOdd) return const SizedBox(width: 16);
+              return widget.children[i ~/ 2];
+            }),
+          ),
+        ),
+        // Left fade
+        if (_leftFade > 0)
+          Positioned(
+            left: 0, top: 0, bottom: 0,
+            child: IgnorePointer(
+              child: AnimatedOpacity(
+                opacity: _leftFade,
+                duration: const Duration(milliseconds: 150),
+                child: Container(
+                  width: 50,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: [Color(0xFF1D263B), Color(0x001D263B)],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        // Right fade
+        if (_rightFade > 0)
+          Positioned(
+            right: 0, top: 0, bottom: 0,
+            child: IgnorePointer(
+              child: AnimatedOpacity(
+                opacity: _rightFade,
+                duration: const Duration(milliseconds: 150),
+                child: Container(
+                  width: 50,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.centerRight,
+                      end: Alignment.centerLeft,
+                      colors: [Color(0xFF1D263B), Color(0x001D263B)],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
   }
 }
 
