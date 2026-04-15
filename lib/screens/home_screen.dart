@@ -476,20 +476,24 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
                       ),
                     ),
 
-                    // Content area — fully opaque dark blue, no transparency
+                    // Content area — centered, matching Glass Tray width (screen - 50px padding)
                     SliverToBoxAdapter(
                       child: Container(
                         color: const Color(0xFF1D263B),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            _buildContentSection('Live in This Week', _videos, 200, 275),
-                            const SizedBox(height: 49),
-                            // ── Radio Khwezi ──
-                            _buildRadioKhweziSection(),
-                            const SizedBox(height: 49),
-                            _buildContentSection('Recommended', _videos.reversed.toList(), 200, 275),
-                          ],
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 25),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildRadioKhweziSection(),
+                                const SizedBox(height: 49),
+                                _buildContentSection('Live in This Week', _videos, 200, 285),
+                                const SizedBox(height: 49),
+                                _buildContentSection('Recommended', _videos.reversed.toList(), 200, 285),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -646,6 +650,25 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
                                         ),
                                       )
                                     : const SizedBox.shrink(),
+                              ),
+                              Tooltip(
+                                message: _radioPlaying ? 'Radio Khwezi — LIVE (Stop)' : 'Radio Khwezi Player',
+                                waitDuration: const Duration(milliseconds: 200),
+                                child: GestureDetector(
+                                  onTap: _toggleRadioKhwezi,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                      Icon(_radioPlaying ? Icons.radio_rounded : Icons.radio_outlined, size: 15,
+                                        color: _radioPlaying ? TertiusTheme.live : Colors.white.withOpacity(0.7)),
+                                      if (_radioPlaying) ...[
+                                        const SizedBox(width: 3),
+                                        Container(width: 5, height: 5,
+                                          decoration: const BoxDecoration(shape: BoxShape.circle, color: TertiusTheme.live)),
+                                      ],
+                                    ]),
+                                  ),
+                                ),
                               ),
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 6),
@@ -1043,25 +1066,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
 
   /// Section with title + cards — both aligned to same left edge
   Widget _buildContentSection(String title, List<VideoItem> videos, double cardWidth, double cardHeight) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 25),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Text(title,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white)),
-          ),
-          _buildContentCards(videos: videos, cardWidth: cardWidth, cardHeight: cardHeight),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Text(title,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white)),
+        ),
+        _buildContentCards(videos: videos, cardWidth: cardWidth, cardHeight: cardHeight),
+      ],
     );
   }
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(25, 0, 25, 12),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Text(title,
         style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white)),
     );
@@ -1078,19 +1098,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
 
     return SizedBox(
       height: cardHeight,
-      child: Center(
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          physics: const BouncingScrollPhysics(),
-          child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(videos.length * 2 - 1, (i) {
-                if (i.isOdd) return const SizedBox(width: 30);
-                final videoIndex = i ~/ 2;
-                final video = videos[videoIndex];
-                return _buildSingleCard(video, videoIndex, cardWidth, cardHeight);
-              }),
-          ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        clipBehavior: Clip.none,
+        child: Row(
+            children: List.generate(videos.length * 2 - 1, (i) {
+              if (i.isOdd) return const SizedBox(width: 16);
+              final videoIndex = i ~/ 2;
+              final video = videos[videoIndex];
+              return _buildSingleCard(video, videoIndex, cardWidth, cardHeight);
+            }),
         ),
       ),
     );
@@ -1302,116 +1320,106 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
 
   // ─── Radio Khwezi ───
   static const _khweziShows = [
-    {'name': 'Vuka Nathi', 'sub': 'Breakfast · Mo-Fr 07:00', 'color': 0xFFE8A317},
-    {'name': 'Sakha Isizwe', 'sub': 'Talk · Mo-Fr 19:30', 'color': 0xFF4F7CFF},
-    {'name': 'Siphetha Isonto', 'sub': 'Gospel · Sa 10:00', 'color': 0xFF52C07A},
-    {'name': 'Sivuselela Ithemba', 'sub': 'Devotional · So 06:00', 'color': 0xFFCF6FD0},
-    {'name': 'Sports Zone', 'sub': 'Sport · Mo-Fr 18:00', 'color': 0xFFE05252},
-    {'name': 'German Hour', 'sub': 'Deutsch · Weekly', 'color': 0xFF3BAFDA},
+    {'name': 'Vuka Nathi', 'sub': 'Breakfast · Mo-Fr 07:00', 'id': '6380ba985ab02400117b05c0', 'img': 'assets/khwezi/vuka_nathi.jpg'},
+    {'name': 'Imini Yethu', 'sub': 'Day · Mo-Fr 11:00', 'id': '63a42ba0f244520011370b77', 'img': 'assets/khwezi/imini_yethu.jpg'},
+    {'name': 'Hamba Nathi', 'sub': 'Drive · Mo-Fr 15:00', 'id': '63a42c50ce6b440010834fa9', 'img': 'assets/khwezi/hamba_nathi.jpg'},
+    {'name': 'Sports Zone', 'sub': 'Sport · Mo-Fr 18:00', 'id': '63a42d0212044a001093c221', 'img': 'assets/khwezi/sports_zone.jpg'},
+    {'name': 'Sakha Isizwe', 'sub': 'Talk · Mo-Fr 19:30', 'id': '63ea1a543c7cda00107fc494', 'img': 'assets/khwezi/sakha_isizwe.jpg'},
+    {'name': 'Hlala Nathi', 'sub': 'Night · Mo-Fr 21:30', 'id': '63a42cc8ea5809001179bda9', 'img': 'assets/khwezi/hlala_nathi.jpg'},
+    {'name': 'German Hour', 'sub': 'Deutsch · Weekly', 'id': '6474ff55a80d09001183cfd7', 'img': 'assets/khwezi/german_hour.jpg'},
+    {'name': 'News', 'sub': 'Current Affairs', 'id': '63a42d96ea5809001179e1a3', 'img': 'assets/khwezi/news.jpg'},
+    {'name': 'Iziko', 'sub': 'Umlando · Heritage', 'id': '67850f2678acadca63e95de5', 'img': 'assets/khwezi/iziko.jpg'},
+    {'name': 'A Word for You', 'sub': 'Devotional', 'id': '677d24cc172a299f310128e0', 'img': 'assets/khwezi/a_word_for_you.jpg'},
+    {'name': 'Sicobelelana', 'sub': 'Youth · Sa 07:00', 'id': '675aefa2c99357572959dcc5', 'img': 'assets/khwezi/sicobelelana.jpg'},
+    {'name': 'Siphetha Isonto', 'sub': 'Gospel · Sa 10:00', 'id': '675991f63a157fb6cbb287b3', 'img': 'assets/khwezi/siphetha_isonto.jpg'},
+    {'name': 'Zunglish', 'sub': 'Zulu+English', 'id': '675c33204e4fa96770726742', 'img': 'assets/khwezi/zunglish.jpg'},
+    {'name': 'Liphumile Ikhwezi', 'sub': 'Ezamabandla', 'id': '67599cd73a157fb6cbb65161', 'img': 'assets/khwezi/liphumile.jpg'},
+    {'name': 'Weekend Breakfast', 'sub': 'Sa Morgen', 'id': '67dae04813f133b29d655a71', 'img': 'assets/khwezi/weekend_breakfast.jpg'},
   ];
 
   Widget _buildRadioKhweziSection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 25),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(bottom: 16),
-            child: Text('Radio Khwezi',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white)),
-          ),
-          // Live player card
-          Container(
-            padding: const EdgeInsets.all(20),
+    final khweziCards = List.generate(_khweziShows.length * 2 - 1, (i) {
+      if (i.isOdd) return const SizedBox(width: 16);
+      final show = _khweziShows[i ~/ 2];
+      return GestureDetector(
+        onTap: () => _playLatestEpisode(show['id'] as String),
+        child: SizedBox(
+          width: 200,
+          height: 285,
+          child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
-                colors: [const Color(0xFF2A3C52), const Color(0xFF1D2B3A).withOpacity(0.9)]),
+              borderRadius: BorderRadius.circular(25),
               border: Border.all(color: Colors.white.withOpacity(0.08)),
             ),
-            child: Row(
-              children: [
-                Container(width: 64, height: 64,
-                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(14),
-                    color: const Color(0xFFE8A317).withOpacity(0.15),
-                    border: Border.all(color: const Color(0xFFE8A317).withOpacity(0.3))),
-                  child: const Icon(Icons.radio_rounded, size: 30, color: Color(0xFFE8A317)),
-                ),
-                const SizedBox(width: 16),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Radio Khwezi', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
-                  const SizedBox(height: 4),
-                  Text(_radioPlaying ? 'Live Stream' : 'isiZulu Community Radio',
-                    style: GoogleFonts.inter(fontSize: 13, color: Colors.white.withOpacity(0.6))),
-                  if (_radioPlaying)
-                    Padding(padding: const EdgeInsets.only(top: 6), child: Row(children: [
-                      Container(width: 8, height: 8, decoration: const BoxDecoration(shape: BoxShape.circle, color: TertiusTheme.live)),
-                      const SizedBox(width: 6),
-                      Text('LIVE', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: TertiusTheme.live, letterSpacing: 0.5)),
-                    ])),
-                ])),
-                GestureDetector(
-                  onTap: _toggleRadioKhwezi,
-                  child: Container(width: 48, height: 48,
-                    decoration: BoxDecoration(shape: BoxShape.circle,
-                      color: _radioPlaying ? TertiusTheme.live.withOpacity(0.15) : Colors.white.withOpacity(0.1),
-                      border: Border.all(color: _radioPlaying ? TertiusTheme.live.withOpacity(0.4) : Colors.white.withOpacity(0.2))),
-                    child: Icon(_radioPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded,
-                      color: _radioPlaying ? TertiusTheme.live : Colors.white, size: 28),
-                  ),
-                ),
-              ],
-            ),
+            clipBehavior: Clip.antiAlias,
+            child: Stack(fit: StackFit.expand, children: [
+              Image.asset(show['img'] as String, fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(color: const Color(0xFF2A3C52),
+                  child: const Center(child: Icon(Icons.radio_rounded, size: 40, color: Color(0xFFE8A317))))),
+              Positioned(left: 0, right: 0, bottom: 0, height: 80, child: Container(
+                decoration: BoxDecoration(gradient: LinearGradient(
+                  begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Colors.black.withOpacity(0.7)])))),
+              Positioned(left: 12, right: 12, bottom: 14, child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(show['name'] as String,
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
+                    maxLines: 2, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
+                  const SizedBox(height: 3),
+                  Text(show['sub'] as String,
+                    style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.6)),
+                    maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
+                ],
+              )),
+            ]),
           ),
-          const SizedBox(height: 16),
-          // Show cards
-          SizedBox(
-            height: 140,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              itemCount: _khweziShows.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
-              itemBuilder: (context, i) {
-                final show = _khweziShows[i];
-                final c = Color(show['color'] as int);
-                return GestureDetector(
-                  onTap: () {
-                    if (!_radioPlaying) _toggleRadioKhwezi();
-                  },
-                  child: Container(
-                    width: 160,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight,
-                        colors: [c.withOpacity(0.35), c.withOpacity(0.12)]),
-                      border: Border.all(color: c.withOpacity(0.2)),
-                    ),
-                    padding: const EdgeInsets.all(14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Icon(Icons.podcasts_rounded, size: 28, color: c.withOpacity(0.8)),
-                        const Spacer(),
-                        Text(show['name'] as String,
-                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
-                          maxLines: 1, overflow: TextOverflow.ellipsis),
-                        const SizedBox(height: 3),
-                        Text(show['sub'] as String,
-                          style: GoogleFonts.inter(fontSize: 11, color: Colors.white.withOpacity(0.55)),
-                          maxLines: 1, overflow: TextOverflow.ellipsis),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
+        ),
+      );
+    });
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Row(
+            children: [
+              const Text('Radio Khwezi',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white)),
+              const SizedBox(width: 10),
+              GestureDetector(
+                onTap: _toggleRadioKhwezi,
+                child: Icon(
+                  _radioPlaying ? Icons.stop_circle_rounded : Icons.radio_rounded,
+                  color: _radioPlaying ? TertiusTheme.live : const Color(0xFFE8A317),
+                  size: 24,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+        SizedBox(
+          height: 285,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            clipBehavior: Clip.none,
+            child: Row(children: khweziCards),
+          ),
+        ),
+      ],
     );
+  }
+
+  void _playLatestEpisode(String showId) {
+    final mp3 = 'https://sphinx.acast.com/p/open/s/$showId/e/latest/media.mp3';
+    js.context.callMethod('eval', ['''
+      if (window._khweziAudio) { window._khweziAudio.pause(); }
+      window._khweziAudio = new Audio('$mp3');
+      window._khweziAudio.play().catch(function(e) { console.log('Podcast play failed:', e); });
+    ''']);
+    setState(() => _radioPlaying = true);
   }
 
   void _toggleRadioKhwezi() {
