@@ -32,6 +32,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
   final _txService = TranscriptionService();
   final _scrollController = ScrollController();
   final _khweziScrollController = ScrollController();
+  final _liveScrollController = ScrollController();
+  final _recommendedScrollController = ScrollController();
 
   List<VideoItem> _videos = [];
   int _currentIndex = 0;
@@ -123,6 +125,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
     _txService.stop();
     _scrollController.dispose();
     _khweziScrollController.dispose();
+    _liveScrollController.dispose();
+    _recommendedScrollController.dispose();
     _focusNode.dispose();
     _searchController.dispose();
     _fadeController.dispose();
@@ -537,22 +541,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
                       ),
                     ),
 
-                    // ── Live + Recommended — centered, constrained to tray width ──
+                    // ── Live + Recommended — full-bleed scroll, header aligned to tray ──
                     SliverToBoxAdapter(
                       child: Container(
                         color: const Color(0xFF1D263B),
-                        child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 49, left: 25, right: 25),
-                            child: Column(
+                        padding: const EdgeInsets.only(top: 49),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final inset = constraints.maxWidth < 600 ? 20.0 : 115.0;
+                            return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _buildContentSection('Live in This Week', _videos, 200, 285),
+                                _buildOverflowSection('Live in This Week', _videos, inset, _liveScrollController),
                                 const SizedBox(height: 49),
-                                _buildContentSection('Recommended', _videos.reversed.toList(), 200, 285),
+                                _buildOverflowSection('Recommended', _videos.reversed.toList(), inset, _recommendedScrollController),
                               ],
-                            ),
-                          ),
+                            );
+                          },
                         ),
                       ),
                     ),
@@ -1124,6 +1129,44 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Ti
   }
 
   /// Section with title + cards — both aligned to same left edge
+  Widget _buildOverflowSection(String title, List<VideoItem> videos, double inset, ScrollController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(left: inset, bottom: 12),
+          child: Text(title,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white)),
+        ),
+        SizedBox(
+          height: 285,
+          child: GestureDetector(
+            onPanUpdate: (details) {
+              if (!controller.hasClients) return;
+              controller.jumpTo(
+                (controller.offset - details.delta.dx)
+                    .clamp(0.0, controller.position.maxScrollExtent),
+              );
+            },
+            child: SingleChildScrollView(
+              controller: controller,
+              scrollDirection: Axis.horizontal,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: EdgeInsets.only(left: inset),
+              child: Row(
+                children: List.generate(videos.length * 2 - 1, (i) {
+                  if (i.isOdd) return const SizedBox(width: 16);
+                  final videoIndex = i ~/ 2;
+                  return _buildSingleCard(videos[videoIndex], videoIndex, 200, 285);
+                }),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildContentSection(String title, List<VideoItem> videos, double cardWidth, double cardHeight) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
